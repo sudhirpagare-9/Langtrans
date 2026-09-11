@@ -39,7 +39,7 @@ export default function App() {
   const [backendStatus, setBackendStatus] = useState('Connecting...');
   const [inputLang, setInputLang] = useState('hi-IN');
   const [targetLang, setTargetLang] = useState('mr-IN');
-  const [detectionStatus, setDetectionStatus] = useState('Ready for Live Speech Recognition');
+  const [detectionStatus, setDetectionStatus] = useState('Ready for Live Speech Recognition & Auto-Detection');
   const [inputText, setInputText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
@@ -82,10 +82,15 @@ export default function App() {
     }
   };
 
-  // Initialize Three.js 3D Realistic Human Lips Viewport with explicit container dimensions
+  // Initialize Three.js 3D Realistic Human Lips Viewport
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
+
+    // Clear previous canvas if any
+    while (currentMount.firstChild) {
+      currentMount.removeChild(currentMount.firstChild);
+    }
 
     const width = currentMount.clientWidth || 450;
     const height = currentMount.clientHeight || 380;
@@ -207,13 +212,13 @@ export default function App() {
     return () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
-      if (currentMount && renderer.domElement) {
+      if (currentMount && renderer.domElement && currentMount.contains(renderer.domElement)) {
         currentMount.removeChild(renderer.domElement);
       }
     };
   }, [isTranslating, isRecording, isSpeaking]);
 
-  // Web Speech API Microphone Integration
+  // Web Speech API Microphone Integration with live detection status
   const toggleRecording = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -241,7 +246,7 @@ export default function App() {
       recognition.onstart = () => {
         setIsRecording(true);
         const langName = WORLD_LANGUAGES.find(l => l.code === inputLang)?.name || inputLang;
-        setDetectionStatus(`Listening & Detecting Language: ${langName}`);
+        setDetectionStatus(`Listening & Detected Input Language: ${langName}`);
         setAvatarState('Listening to Live Speech...');
       };
 
@@ -252,7 +257,7 @@ export default function App() {
         }
         setInputText(transcript);
         const langName = WORLD_LANGUAGES.find(l => l.code === inputLang)?.name || inputLang;
-        setDetectionStatus(`Detected Language: ${langName} (Active Stream)`);
+        setDetectionStatus(`Detected Language: ${langName} (Live Stream Active)`);
       };
 
       recognition.onerror = (event) => {
@@ -382,7 +387,7 @@ export default function App() {
             </h2>
           </div>
 
-          {/* Dual Dropdowns for Input and Output World Languages */}
+          {/* Both Input and Output Language Dropdowns with all World Languages */}
           <div className="language-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
             <div className="input-group">
               <label htmlFor="input-lang" style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: '#94a3b8' }}>Input Language (Mic)</label>
@@ -417,7 +422,7 @@ export default function App() {
             </div>
           </div>
 
-          {/* Live Status Banner showing detected language & listening status */}
+          {/* Live Language Detection Status Message Banner */}
           <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '0.6rem 0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <span style={{ height: '9px', width: '9px', backgroundColor: isRecording ? '#22c55e' : '#38bdf8', borderRadius: '50%', display: 'inline-block', boxShadow: isRecording ? '0 0 8px #22c55e' : 'none' }}></span>
             <span style={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: '500' }}>{detectionStatus}</span>
@@ -483,7 +488,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right Panel: Realistic 3D Human Lips Viewport with fixed guaranteed height */}
+        {/* Right Panel: Realistic 3D Human Lips Viewport */}
         <div className="panel" style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
           <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <h2 className="panel-title" style={{ fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -493,7 +498,7 @@ export default function App() {
           </div>
 
           <div className="viewport-container" ref={mountRef} style={{ width: '100%', height: '390px', position: 'relative', backgroundColor: '#0f172a', borderRadius: '6px', border: '1px solid #334155', overflow: 'hidden' }}>
-            <div className="viewport-overlay-status" style={{ position: 'absolute', bottom: '1rem', width: '100%', textAlign: 'center', pointerEvents: 'none' }}>
+            <div className="viewport-overlay-status" style={{ position: 'absolute', bottom: '1rem', width: '100%', textAlign: 'center', pointerEvents: 'none', zIndex: 10 }}>
               <p style={{ fontWeight: '600', color: '#60a5fa', textShadow: '0 2px 6px rgba(0,0,0,0.9)', fontSize: '0.9rem', margin: 0 }}>{avatarState}</p>
               <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Real-Time 3D Lip Articulation for PWD Accessibility</span>
             </div>
