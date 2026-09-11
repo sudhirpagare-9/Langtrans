@@ -43,10 +43,10 @@ app.include_router(translation_router)
 def on_startup():
     create_db_and_tables()
 
+@app.get("/")
+def read_root():
+    return {"status": "online", "message": "AI Secure Translator & Lip-Sync API is running"}
+
 @app.get("/health")
 def health_check():
     return {"status": "secure", "compliance": "NIST SP 800-53 / GDPR Article 25"}
-
-@app.get("/")
-def read_root():
-    return {"message": "AI Secure Translator & Lip-Sync API is running"}
