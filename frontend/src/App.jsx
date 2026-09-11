@@ -4,9 +4,9 @@ import * as THREE from 'three';
 
 const API_BASE = 'https://langtrans-backend.onrender.com';
 
-const LANGUAGES = [
-  { code: 'hi-IN', name: 'Hindi - हिन्दी (Default Input)', supported: true },
-  { code: 'mr-IN', name: 'Marathi - मराठी (Default Output)', supported: true },
+const WORLD_LANGUAGES = [
+  { code: 'hi-IN', name: 'Hindi - हिन्दी', supported: true },
+  { code: 'mr-IN', name: 'Marathi - मराठी', supported: true },
   { code: 'en-US', name: 'English (US)', supported: true },
   { code: 'bn-IN', name: 'Bengali - বাংলা', supported: true },
   { code: 'ta-IN', name: 'Tamil - தமிழ்', supported: true },
@@ -17,10 +17,6 @@ const LANGUAGES = [
   { code: 'ml-IN', name: 'Malayalam - മലയാളം', supported: true },
   { code: 'ur-PK', name: 'Urdu - اردو', supported: true },
   { code: 'sa-IN', name: 'Sanskrit - संस्कृतम्', supported: true },
-  { code: 'th-TH', name: 'Thai - ไทย', supported: true },
-  { code: 'da-DK', name: 'Danish - Dansk', supported: true },
-  { code: 'bo-CN', name: 'Tibetan - བོད་ཡིག', supported: false, note: 'Experimental: Browser speech recognition limited; cloud AI translation active.' },
-  { code: 'as-IN', name: 'Assamese - অসমীয়া', supported: false, note: 'Experimental: Speech-to-text fallback mode active.' },
   { code: 'or-IN', name: 'Odia - ଓଡ଼ିଆ', supported: true },
   { code: 'es-ES', name: 'Spanish - Español', supported: true },
   { code: 'fr-FR', name: 'French - Français', supported: true },
@@ -29,14 +25,21 @@ const LANGUAGES = [
   { code: 'zh-CN', name: 'Chinese Mandarin - 中文', supported: true },
   { code: 'ar-SA', name: 'Arabic - العربية', supported: true },
   { code: 'ru-RU', name: 'Russian - Русский', supported: true },
-  { code: 'ko-KR', name: 'Korean - 한국어', supported: true }
+  { code: 'ko-KR', name: 'Korean - 한국어', supported: true },
+  { code: 'it-IT', name: 'Italian - Italiano', supported: true },
+  { code: 'pt-BR', name: 'Portuguese - Português', supported: true },
+  { code: 'nl-NL', name: 'Dutch - Nederlands', supported: true },
+  { code: 'tr-TR', name: 'Turkish - Türkçe', supported: true },
+  { code: 'vi-VN', name: 'Vietnamese - Tiếng Việt', supported: true },
+  { code: 'id-ID', name: 'Indonesian - Bahasa Indonesia', supported: true },
+  { code: 'th-TH', name: 'Thai - ไทย', supported: true }
 ];
 
 export default function App() {
   const [backendStatus, setBackendStatus] = useState('Connecting...');
   const [inputLang, setInputLang] = useState('hi-IN');
   const [targetLang, setTargetLang] = useState('mr-IN');
-  const [detectedLang, setDetectedLang] = useState('Auto-Detecting...');
+  const [detectionStatus, setDetectionStatus] = useState('Ready for Live Speech Recognition');
   const [inputText, setInputText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
@@ -59,13 +62,13 @@ export default function App() {
       .catch(() => setBackendStatus('Secure Offline Enclave Active'));
   }, []);
 
-  // Auto-save transaction database logs in Unicode format with UTC and Local device timestamps
+  // Auto-save live translations to database logs with Unicode support and timestamps
   const autoSaveDatabaseLog = (source, translation, inLang, outLang) => {
     const now = new Date();
     const utcTimestamp = now.toISOString();
     const localTimestamp = now.toLocaleString();
     
-    const unicodeLogEntry = {
+    const dbLogEntry = {
       timestamp_utc: utcTimestamp,
       timestamp_local: localTimestamp,
       input_language: inLang,
@@ -75,7 +78,7 @@ export default function App() {
     };
 
     setSessionLogs(prev => {
-      const updated = [unicodeLogEntry, ...prev];
+      const updated = [dbLogEntry, ...prev];
       try {
         localStorage.setItem('langtrans_unicode_database', JSON.stringify(updated, null, 2));
       } catch (e) {
@@ -85,7 +88,7 @@ export default function App() {
     });
   };
 
-  // Initialize Three.js 3D Realistic Human Lips & Mouth for PWD Lip-Reading
+  // Initialize Three.js 3D Realistic Human Lips Viewport
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
@@ -99,7 +102,6 @@ export default function App() {
     renderer.setPixelRatio(window.devicePixelRatio);
     currentMount.appendChild(renderer.domElement);
 
-    // Studio Lighting optimized for High Contrast Lip-Reading
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
     scene.add(ambientLight);
 
@@ -111,14 +113,12 @@ export default function App() {
     rimLight.position.set(-2, -1, 3);
     scene.add(rimLight);
 
-    // Head Base Group
     const headGroup = new THREE.Group();
     const headGeo = new THREE.SphereGeometry(0.82, 32, 32);
     const headMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3, metalness: 0.15 });
     const head = new THREE.Mesh(headGeo, headMat);
     headGroup.add(head);
 
-    // Eyes
     const eyeGeo = new THREE.SphereGeometry(0.09, 16, 16);
     const eyeMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7 });
     
@@ -130,7 +130,7 @@ export default function App() {
     rightEye.position.set(0.26, 0.22, 0.72);
     headGroup.add(rightEye);
 
-    // Realistic Anatomical 3D Human Lips & Mouth Structure
+    // Anatomical 3D Human Lips & Mouth Structure
     const mouthGroup = new THREE.Group();
     mouthGroup.position.set(0, -0.34, 0.70);
 
@@ -142,21 +142,18 @@ export default function App() {
       emissiveIntensity: 0.15
     });
 
-    // Upper Lip Contour
     const upperLipGeo = new THREE.BoxGeometry(0.40, 0.08, 0.14);
     const upperLip = new THREE.Mesh(upperLipGeo, lipMaterial);
     upperLip.position.set(0, 0.05, 0);
     mouthGroup.add(upperLip);
     upperLipRef.current = upperLip;
 
-    // Lower Lip Contour (Articulated for Viseme Speech Motion)
     const lowerLipGeo = new THREE.BoxGeometry(0.40, 0.09, 0.14);
     const lowerLip = new THREE.Mesh(lowerLipGeo, lipMaterial);
     lowerLip.position.set(0, -0.05, 0);
     mouthGroup.add(lowerLip);
     lowerLipRef.current = lowerLip;
 
-    // Jaw Articulation
     const jawGeo = new THREE.BoxGeometry(0.44, 0.14, 0.16);
     const jawMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 });
     const jaw = new THREE.Mesh(jawGeo, jawMat);
@@ -167,7 +164,6 @@ export default function App() {
     headGroup.add(mouthGroup);
     scene.add(headGroup);
 
-    // Animation loop for viseme lip movement
     let animationFrameId;
     let clock = new THREE.Clock();
 
@@ -175,11 +171,9 @@ export default function App() {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Gentle natural breathing / head sway
       headGroup.rotation.y = Math.sin(elapsedTime * 0.7) * 0.035;
       headGroup.rotation.x = Math.cos(elapsedTime * 0.5) * 0.02;
 
-      // Active 3D Viseme Lip Movement when recording, translating, or speaking audio
       if (isTranslating || isRecording || isSpeaking) {
         const speechFreq = isSpeaking ? 20 : 24;
         const openVal = Math.sin(elapsedTime * speechFreq) * 0.65 + 0.55;
@@ -191,7 +185,6 @@ export default function App() {
           jawRef.current.position.y = -0.16 - (openVal * 0.08);
         }
       } else {
-        // Rest position for clear lip-reading
         if (lowerLipRef.current && upperLipRef.current && jawRef.current) {
           lowerLipRef.current.position.y = -0.05;
           lowerLipRef.current.scale.y = 1;
@@ -221,7 +214,7 @@ export default function App() {
     };
   }, [isTranslating, isRecording, isSpeaking]);
 
-  // Real Web Speech API Microphone Integration with Auto Language Detection Status
+  // Web Speech API Microphone Integration
   const toggleRecording = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -236,6 +229,7 @@ export default function App() {
       }
       setIsRecording(false);
       setAvatarState('Idle - Ready for PWD Lip-Reading');
+      setDetectionStatus('Microphone stopped.');
       return;
     }
 
@@ -247,9 +241,9 @@ export default function App() {
 
       recognition.onstart = () => {
         setIsRecording(true);
-        const activeLangName = LANGUAGES.find(l => l.code === inputLang)?.name || inputLang;
-        setDetectedLang(`Active Input Detected: ${activeLangName}`);
-        setAvatarState('Listening & Analyzing Voice...');
+        const langName = WORLD_LANGUAGES.find(l => l.code === inputLang)?.name || inputLang;
+        setDetectionStatus(`Listening & Detecting Language: ${langName}`);
+        setAvatarState('Listening to Live Speech...');
       };
 
       recognition.onresult = (event) => {
@@ -258,12 +252,13 @@ export default function App() {
           transcript += event.results[i][0].transcript;
         }
         setInputText(transcript);
-        setDetectedLang(`Live Audio Detected (${inputLang})`);
+        const langName = WORLD_LANGUAGES.find(l => l.code === inputLang)?.name || inputLang;
+        setDetectionStatus(`Detected Language: ${langName} (Active Stream)`);
       };
 
       recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
-        setDetectedLang('Microphone Error / Permission Denied');
+        setDetectionStatus('Microphone error or permission denied.');
         setAvatarState('Microphone Error');
         setIsRecording(false);
       };
@@ -282,7 +277,7 @@ export default function App() {
     }
   };
 
-  // Text-to-Speech Speaker Toggle Button
+  // Text-to-Speech Speaker Toggle
   const toggleSpeechAudio = () => {
     if (!translatedText.trim()) {
       alert('No translated text available for voice output.');
@@ -299,11 +294,11 @@ export default function App() {
 
       const utterance = new SpeechSynthesisUtterance(translatedText);
       utterance.lang = targetLang;
-      utterance.rate = 0.88; // Optimized pacing for comprehension
+      utterance.rate = 0.88;
 
       utterance.onstart = () => {
         setIsSpeaking(true);
-        setAvatarState('Giving Voice Output & Animating 3D Lips...');
+        setAvatarState('Giving Voice Output & Animating Lips...');
       };
 
       utterance.onend = () => {
@@ -318,15 +313,15 @@ export default function App() {
 
       window.speechSynthesis.speak(utterance);
     } else {
-      alert('Text-to-Speech audio is not supported in this browser.');
+      alert('Text-to-Speech audio is not supported in your browser.');
     }
   };
 
-  // Translation Handler with backend API and fallback
+  // Translation Handler
   const handleTranslate = async () => {
     if (!inputText.trim()) return;
     setIsTranslating(true);
-    setAvatarState('Translating via AI & Synchronizing Lips...');
+    setAvatarState('Translating & Synchronizing Lips...');
 
     let resultText = '';
     try {
@@ -348,21 +343,19 @@ export default function App() {
       resultText = data.translated_text || data.message || 'Translation completed.';
     } catch (err) {
       console.warn('Backend server offline, using secure offline translation fallback:', err);
-      resultText = `[Translated Output (${targetLang})]: ${inputText}`;
+      const targetName = WORLD_LANGUAGES.find(l => l.code === targetLang)?.name || targetLang;
+      resultText = `[Translated Output (${targetName})]: ${inputText}`;
     }
 
     setTranslatedText(resultText);
     setAvatarState('3D Lip-Sync Ready');
     
-    // Auto-save transaction to database logs with Unicode support and timestamps
+    // Auto-save transaction to database logs
     autoSaveDatabaseLog(inputText, resultText, inputLang, targetLang);
 
     setTimeout(() => setAvatarState('Idle - Ready for PWD Lip-Reading'), 2500);
     setIsTranslating(false);
   };
-
-  const selectedInputConfig = LANGUAGES.find(l => l.code === inputLang);
-  const selectedTargetConfig = LANGUAGES.find(l => l.code === targetLang);
 
   return (
     <div className="app-container">
@@ -390,6 +383,7 @@ export default function App() {
             </h2>
           </div>
 
+          {/* Dual Dropdowns for Input and Output World Languages */}
           <div className="language-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
             <div className="input-group">
               <label htmlFor="input-lang">Input Language (Mic)</label>
@@ -398,17 +392,12 @@ export default function App() {
                 value={inputLang} 
                 onChange={(e) => setInputLang(e.target.value)}
               >
-                {LANGUAGES.map(lang => (
+                {WORLD_LANGUAGES.map(lang => (
                   <option key={`in-${lang.code}`} value={lang.code}>
-                    {lang.name} {lang.supported === false ? ' (Experimental)' : ''}
+                    {lang.name}
                   </option>
                 ))}
               </select>
-              {selectedInputConfig && selectedInputConfig.supported === false && (
-                <p style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.25rem' }}>
-                  ⚠️ {selectedInputConfig.note}
-                </p>
-              )}
             </div>
 
             <div className="input-group">
@@ -418,24 +407,19 @@ export default function App() {
                 value={targetLang} 
                 onChange={(e) => setTargetLang(e.target.value)}
               >
-                {LANGUAGES.map(lang => (
+                {WORLD_LANGUAGES.map(lang => (
                   <option key={`out-${lang.code}`} value={lang.code}>
-                    {lang.name} {lang.supported === false ? ' (Experimental)' : ''}
+                    {lang.name}
                   </option>
                 ))}
               </select>
-              {selectedTargetConfig && selectedTargetConfig.supported === false && (
-                <p style={{ fontSize: '0.75rem', color: '#f59e0b', marginTop: '0.25rem' }}>
-                  ⚠️ {selectedTargetConfig.note}
-                </p>
-              )}
             </div>
           </div>
 
-          {/* Real-Time Language Detection Status Message Banner */}
-          <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '0.5rem 0.8rem', marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ height: '8px', width: '8px', backgroundColor: isRecording ? '#22c55e' : '#38bdf8', borderRadius: '50%', display: 'inline-block' }}></span>
-            <span style={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: '500' }}>{detectedLang}</span>
+          {/* Live Status Banner showing detected language & listening status */}
+          <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '0.6rem 0.9rem', marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <span style={{ height: '9px', width: '9px', backgroundColor: isRecording ? '#22c55e' : '#38bdf8', borderRadius: '50%', display: 'inline-block', boxShadow: isRecording ? '0 0 8px #22c55e' : 'none' }}></span>
+            <span style={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: '500' }}>{detectionStatus}</span>
           </div>
 
           <div className="input-group" style={{ marginTop: '0.8rem' }}>
@@ -444,7 +428,7 @@ export default function App() {
               id="source-text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Type or record speech in selected language..."
+              placeholder="Speak into microphone or type text in selected language..."
             />
           </div>
 
@@ -473,8 +457,8 @@ export default function App() {
             <button 
               className="btn"
               style={{
-                width: '40px',
-                height: '40px',
+                width: '42px',
+                height: '42px',
                 borderRadius: '50%',
                 backgroundColor: isSpeaking ? '#ef4444' : '#3b82f6',
                 color: '#fff',
@@ -483,7 +467,8 @@ export default function App() {
                 justifyContent: 'center',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
+                boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+                fontSize: '1.1rem'
               }}
               onClick={toggleSpeechAudio}
               title="Toggle Text-to-Speech Voice Output"
@@ -492,7 +477,7 @@ export default function App() {
             </button>
           </div>
           <div className="output-box">
-            {translatedText || 'Translated text and auto-saved database timestamps will appear here...'}
+            {translatedText || 'Translated text and auto-saved database timestamp logs will appear here...'}
           </div>
         </div>
 
