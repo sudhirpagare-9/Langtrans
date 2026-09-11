@@ -5,34 +5,34 @@ import * as THREE from 'three';
 const API_BASE = 'https://langtrans-backend.onrender.com';
 
 const WORLD_LANGUAGES = [
-  { code: 'hi-IN', name: 'Hindi - हिन्दी', supported: true },
-  { code: 'mr-IN', name: 'Marathi - मराठी', supported: true },
-  { code: 'en-US', name: 'English (US)', supported: true },
-  { code: 'bn-IN', name: 'Bengali - বাংলা', supported: true },
-  { code: 'ta-IN', name: 'Tamil - தமிழ்', supported: true },
-  { code: 'te-IN', name: 'Telugu - తెలుగు', supported: true },
-  { code: 'gu-IN', name: 'Gujarati - ગુજરાતી', supported: true },
-  { code: 'pa-IN', name: 'Punjabi - ਪੰਜਾਬੀ', supported: true },
-  { code: 'kn-IN', name: 'Kannada - ಕನ್ನಡ', supported: true },
-  { code: 'ml-IN', name: 'Malayalam - മലയാളം', supported: true },
-  { code: 'ur-PK', name: 'Urdu - اردو', supported: true },
-  { code: 'sa-IN', name: 'Sanskrit - संस्कृतम्', supported: true },
-  { code: 'or-IN', name: 'Odia - ଓଡ଼ିଆ', supported: true },
-  { code: 'es-ES', name: 'Spanish - Español', supported: true },
-  { code: 'fr-FR', name: 'French - Français', supported: true },
-  { code: 'de-DE', name: 'German - Deutsch', supported: true },
-  { code: 'ja-JP', name: 'Japanese - 日本語', supported: true },
-  { code: 'zh-CN', name: 'Chinese Mandarin - 中文', supported: true },
-  { code: 'ar-SA', name: 'Arabic - العربية', supported: true },
-  { code: 'ru-RU', name: 'Russian - Русский', supported: true },
-  { code: 'ko-KR', name: 'Korean - 한국어', supported: true },
-  { code: 'it-IT', name: 'Italian - Italiano', supported: true },
-  { code: 'pt-BR', name: 'Portuguese - Português', supported: true },
-  { code: 'nl-NL', name: 'Dutch - Nederlands', supported: true },
-  { code: 'tr-TR', name: 'Turkish - Türkçe', supported: true },
-  { code: 'vi-VN', name: 'Vietnamese - Tiếng Việt', supported: true },
-  { code: 'id-ID', name: 'Indonesian - Bahasa Indonesia', supported: true },
-  { code: 'th-TH', name: 'Thai - ไทย', supported: true }
+  { code: 'hi-IN', name: 'Hindi - हिन्दी' },
+  { code: 'mr-IN', name: 'Marathi - मराठी' },
+  { code: 'en-US', name: 'English (US)' },
+  { code: 'bn-IN', name: 'Bengali - বাংলা' },
+  { code: 'ta-IN', name: 'Tamil - தமிழ்' },
+  { code: 'te-IN', name: 'Telugu - తెలుగు' },
+  { code: 'gu-IN', name: 'Gujarati - ગુજરાતી' },
+  { code: 'pa-IN', name: 'Punjabi - ਪੰਜਾਬੀ' },
+  { code: 'kn-IN', name: 'Kannada - ಕನ್ನಡ' },
+  { code: 'ml-IN', name: 'Malayalam - മലയാളം' },
+  { code: 'ur-PK', name: 'Urdu - اردو' },
+  { code: 'sa-IN', name: 'Sanskrit - संस्कृतम्' },
+  { code: 'or-IN', name: 'Odia - ଓଡ଼ିଆ' },
+  { code: 'es-ES', name: 'Spanish - Español' },
+  { code: 'fr-FR', name: 'French - Français' },
+  { code: 'de-DE', name: 'German - Deutsch' },
+  { code: 'ja-JP', name: 'Japanese - 日本語' },
+  { code: 'zh-CN', name: 'Chinese Mandarin - 中文' },
+  { code: 'ar-SA', name: 'Arabic - العربية' },
+  { code: 'ru-RU', name: 'Russian - Русский' },
+  { code: 'ko-KR', name: 'Korean - 한국어' },
+  { code: 'it-IT', name: 'Italian - Italiano' },
+  { code: 'pt-BR', name: 'Portuguese - Português' },
+  { code: 'nl-NL', name: 'Dutch - Nederlands' },
+  { code: 'tr-TR', name: 'Turkish - Türkçe' },
+  { code: 'vi-VN', name: 'Vietnamese - Tiếng Việt' },
+  { code: 'id-ID', name: 'Indonesian - Bahasa Indonesia' },
+  { code: 'th-TH', name: 'Thai - ไทย' }
 ];
 
 export default function App() {
@@ -46,7 +46,6 @@ export default function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [avatarState, setAvatarState] = useState('Idle - Ready for PWD Lip-Reading');
-  const [sessionLogs, setSessionLogs] = useState([]);
 
   const mountRef = useRef(null);
   const upperLipRef = useRef(null);
@@ -65,40 +64,38 @@ export default function App() {
   // Auto-save live translations to database logs with Unicode support and timestamps
   const autoSaveDatabaseLog = (source, translation, inLang, outLang) => {
     const now = new Date();
-    const utcTimestamp = now.toISOString();
-    const localTimestamp = now.toLocaleString();
-    
     const dbLogEntry = {
-      timestamp_utc: utcTimestamp,
-      timestamp_local: localTimestamp,
+      timestamp_utc: now.toISOString(),
+      timestamp_local: now.toLocaleString(),
       input_language: inLang,
       output_language: outLang,
       source_text_unicode: source,
       translated_text_unicode: translation
     };
 
-    setSessionLogs(prev => {
-      const updated = [dbLogEntry, ...prev];
-      try {
-        localStorage.setItem('langtrans_unicode_database', JSON.stringify(updated, null, 2));
-      } catch (e) {
-        console.error('Database write error', e);
-      }
-      return updated;
-    });
+    try {
+      const existingLogs = JSON.parse(localStorage.getItem('langtrans_unicode_database') || '[]');
+      const updated = [dbLogEntry, ...existingLogs];
+      localStorage.setItem('langtrans_unicode_database', JSON.stringify(updated, null, 2));
+    } catch (e) {
+      console.error('Database write error', e);
+    }
   };
 
-  // Initialize Three.js 3D Realistic Human Lips Viewport
+  // Initialize Three.js 3D Realistic Human Lips Viewport with explicit container dimensions
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
 
+    const width = currentMount.clientWidth || 450;
+    const height = currentMount.clientHeight || 380;
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
+    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
     camera.position.set(0, 0, 3.4);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+    renderer.setSize(width, height);
     renderer.setPixelRatio(window.devicePixelRatio);
     currentMount.appendChild(renderer.domElement);
 
@@ -199,9 +196,11 @@ export default function App() {
 
     const handleResize = () => {
       if (!currentMount) return;
-      camera.aspect = currentMount.clientWidth / currentMount.clientHeight;
+      const w = currentMount.clientWidth || 450;
+      const h = currentMount.clientHeight || 380;
+      camera.aspect = w / h;
       camera.updateProjectionMatrix();
-      renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
+      renderer.setSize(w, h);
     };
     window.addEventListener('resize', handleResize);
 
@@ -358,39 +357,40 @@ export default function App() {
   };
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <div className="brand-section">
-          <span className="brand-icon">🌐</span>
-          <h1 className="brand-title">AI Secure Real-Time Translator & 3D Lip-Sync Studio</h1>
+    <div className="app-container" style={{ minHeight: '100vh', backgroundColor: '#0f172a', color: '#f8fafc', padding: '1rem', fontFamily: 'sans-serif' }}>
+      <header className="app-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid #334155', paddingBottom: '1rem' }}>
+        <div className="brand-section" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span className="brand-icon" style={{ fontSize: '1.8rem' }}>🌐</span>
+          <h1 className="brand-title" style={{ fontSize: '1.25rem', fontWeight: '700' }}>AI Secure Real-Time Translator & 3D Lip-Sync Studio</h1>
         </div>
-        <div className="compliance-badges">
-          <div className="badge badge-secure">
-            <span className="status-dot"></span> GDPR / NIST SP 800-53 Compliant
+        <div className="compliance-badges" style={{ display: 'flex', gap: '0.75rem' }}>
+          <div className="badge badge-secure" style={{ fontSize: '0.75rem', backgroundColor: '#1e293b', border: '1px solid #334155', padding: '0.3rem 0.6rem', borderRadius: '4px' }}>
+            GDPR / NIST SP 800-53 Compliant
           </div>
-          <div className="badge badge-status">
-            <span className="status-dot"></span> Backend: {backendStatus}
+          <div className="badge badge-status" style={{ fontSize: '0.75rem', backgroundColor: '#1e293b', border: '1px solid #334155', padding: '0.3rem 0.6rem', borderRadius: '4px' }}>
+            Backend: {backendStatus}
           </div>
         </div>
       </header>
 
-      <main className="workspace-grid">
+      <main className="workspace-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
         {/* Left Panel: Input & Output Language Dropdowns, Mic, Status & Transcript */}
-        <div className="panel">
-          <div className="panel-header">
-            <h2 className="panel-title">
+        <div className="panel" style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '1.25rem' }}>
+          <div className="panel-header" style={{ marginBottom: '1rem' }}>
+            <h2 className="panel-title" style={{ fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>🎙️</span> 1. Speech Input & Language Configuration
             </h2>
           </div>
 
           {/* Dual Dropdowns for Input and Output World Languages */}
-          <div className="language-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+          <div className="language-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
             <div className="input-group">
-              <label htmlFor="input-lang">Input Language (Mic)</label>
+              <label htmlFor="input-lang" style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: '#94a3b8' }}>Input Language (Mic)</label>
               <select 
                 id="input-lang"
                 value={inputLang} 
                 onChange={(e) => setInputLang(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', backgroundColor: '#0f172a', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px' }}
               >
                 {WORLD_LANGUAGES.map(lang => (
                   <option key={`in-${lang.code}`} value={lang.code}>
@@ -401,11 +401,12 @@ export default function App() {
             </div>
 
             <div className="input-group">
-              <label htmlFor="target-lang">Target Language (Output)</label>
+              <label htmlFor="target-lang" style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: '#94a3b8' }}>Target Language (Output)</label>
               <select 
                 id="target-lang"
                 value={targetLang} 
                 onChange={(e) => setTargetLang(e.target.value)}
+                style={{ width: '100%', padding: '0.5rem', backgroundColor: '#0f172a', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px' }}
               >
                 {WORLD_LANGUAGES.map(lang => (
                   <option key={`out-${lang.code}`} value={lang.code}>
@@ -417,31 +418,33 @@ export default function App() {
           </div>
 
           {/* Live Status Banner showing detected language & listening status */}
-          <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '0.6rem 0.9rem', marginTop: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '0.6rem 0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <span style={{ height: '9px', width: '9px', backgroundColor: isRecording ? '#22c55e' : '#38bdf8', borderRadius: '50%', display: 'inline-block', boxShadow: isRecording ? '0 0 8px #22c55e' : 'none' }}></span>
             <span style={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: '500' }}>{detectionStatus}</span>
           </div>
 
-          <div className="input-group" style={{ marginTop: '0.8rem' }}>
-            <label htmlFor="source-text">Live Transcript / Source Text (Unicode Supported)</label>
+          <div className="input-group" style={{ marginBottom: '1rem' }}>
+            <label htmlFor="source-text" style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: '#94a3b8' }}>Live Transcript / Source Text (Unicode Supported)</label>
             <textarea
               id="source-text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Speak into microphone or type text in selected language..."
+              style={{ width: '100%', height: '110px', padding: '0.75rem', backgroundColor: '#0f172a', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px', resize: 'vertical' }}
             />
           </div>
 
-          <div className="controls-row">
+          <div className="controls-row" style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
             <button 
               className={`btn ${isRecording ? 'btn-danger' : 'btn-secondary'}`}
-              style={isRecording ? { backgroundColor: '#ef4444', color: '#fff' } : {}}
+              style={{ flex: 1, padding: '0.6rem 1rem', backgroundColor: isRecording ? '#ef4444' : '#334155', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
               onClick={toggleRecording}
             >
               {isRecording ? '🛑 Stop Mic' : '🎤 Live Mic'}
             </button>
             <button 
               className="btn btn-primary"
+              style={{ flex: 1, padding: '0.6rem 1rem', backgroundColor: '#3b82f6', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
               onClick={handleTranslate}
               disabled={isTranslating}
             >
@@ -449,13 +452,12 @@ export default function App() {
             </button>
           </div>
 
-          <div className="panel-header" style={{ marginTop: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h2 className="panel-title">
+          <div className="panel-header" style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 className="panel-title" style={{ fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span>📄</span> 3. Translation Output & Voice
             </h2>
             {/* Round Button with Speaker Icon for Text-to-Speech */}
             <button 
-              className="btn"
               style={{
                 width: '42px',
                 height: '42px',
@@ -476,30 +478,30 @@ export default function App() {
               {isSpeaking ? '🔇' : '🔊'}
             </button>
           </div>
-          <div className="output-box">
+          <div className="output-box" style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '4px', padding: '0.75rem', minHeight: '80px', fontSize: '0.9rem', color: '#e2e8f0' }}>
             {translatedText || 'Translated text and auto-saved database timestamp logs will appear here...'}
           </div>
         </div>
 
-        {/* Right Panel: Realistic 3D Human Lips Viewport for PWD Lip-Reading */}
-        <div className="panel">
-          <div className="panel-header">
-            <h2 className="panel-title">
-              <span>👤</span> 2. PWD 3D Human Lips & Viseme Lip-Sync Viewport
+        {/* Right Panel: Realistic 3D Human Lips Viewport with fixed guaranteed height */}
+        <div className="panel" style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '1.25rem', display: 'flex', flexDirection: 'column' }}>
+          <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h2 className="panel-title" style={{ fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span>👤</span> 2. PWD 3D Human Lips & Viseme Viewport
             </h2>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>WebGL Accelerated</span>
+            <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>WebGL Accelerated</span>
           </div>
 
-          <div className="viewport-container" ref={mountRef}>
+          <div className="viewport-container" ref={mountRef} style={{ width: '100%', height: '390px', position: 'relative', backgroundColor: '#0f172a', borderRadius: '6px', border: '1px solid #334155', overflow: 'hidden' }}>
             <div className="viewport-overlay-status" style={{ position: 'absolute', bottom: '1rem', width: '100%', textAlign: 'center', pointerEvents: 'none' }}>
-              <p style={{ fontWeight: '600', color: '#60a5fa', textShadow: '0 2px 6px rgba(0,0,0,0.9)' }}>{avatarState}</p>
-              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Real-Time 3D Lip Articulation for PWD Accessibility & Reading</span>
+              <p style={{ fontWeight: '600', color: '#60a5fa', textShadow: '0 2px 6px rgba(0,0,0,0.9)', fontSize: '0.9rem', margin: 0 }}>{avatarState}</p>
+              <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Real-Time 3D Lip Articulation for PWD Accessibility</span>
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="app-footer">
+      <footer className="app-footer" style={{ textAlign: 'center', marginTop: '1.5rem', fontSize: '0.75rem', color: '#64748b', borderTop: '1px solid #334155', paddingTop: '1rem' }}>
         Powered by Google Gemini API & Three.js WebGL Engine • Auto-Saved Unicode Database Logs Active (UTC & Local Timestamps)
       </footer>
     </div>
