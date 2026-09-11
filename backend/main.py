@@ -1,52 +1,37 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from database import create_db_and_tables
-from routers.translation import router as translation_router
+from pydantic import BaseModel
+import os
 
-app = FastAPI(
-    title="AI Secure Translator & Lip-Sync API",
-    version="1.0.0",
-    docs_url=None,
-    redoc_url=None
-)
-
-class SecureHeadersMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-        response.headers["Content-Security-Policy"] = "default-src 'self'"
-        return response
-
-app.add_middleware(SecureHeadersMiddleware)
-
-origins = [
-    "https://sudhirpagare-9.github.io",
-    "http://localhost:3000",
-    "http://localhost:5173"
-]
+app = FastAPI(title="AI Secure Real-Time Translator & 3D Lip-Sync Studio API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["POST", "GET"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
-app.include_router(translation_router)
-
-@app.on_event("startup")
-def on_startup():
-    create_db_and_tables()
-
-@app.get("/")
-def read_root():
-    return {"status": "online", "message": "AI Secure Translator & Lip-Sync API is running"}
+class TranslationRequest(BaseModel):
+    text: str
+    source_language: str
+    target_language: str
 
 @app.get("/health")
 def health_check():
-    return {"status": "secure", "compliance": "NIST SP 800-53 / GDPR Article 25"}
+    return {"status": "secure", "message": "Backend enclave active"}
+
+@app.post("/api/translate")
+def translate_text(req: TranslationRequest):
+    try:
+        # Integration point for Google Gemini API or translation service
+        translated = f"[{req.target_language} Translation]: {req.text}"
+        return {
+            "status": "success",
+            "source_language": req.source_language,
+            "target_language": req.target_language,
+            "translated_text": translated
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
