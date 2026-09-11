@@ -46,3 +46,7 @@ def on_startup():
 @app.get("/health")
 def health_check():
     return {"status": "secure", "compliance": "NIST SP 800-53 / GDPR Article 25"}
+
+@app.get("/")
+def read_root():
+    return {"message": "AI Secure Translator & Lip-Sync API is running"}
