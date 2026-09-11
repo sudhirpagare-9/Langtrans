@@ -19,6 +19,9 @@ const LANGUAGES = [
   { code: 'as-IN', name: 'Assamese - অসমীয়া' },
   { code: 'ur-PK', name: 'Urdu - اردو' },
   { code: 'sa-IN', name: 'Sanskrit - संस्कृतम्' },
+  { code: 'bo-CN', name: 'Tibetan - བོད་ཡིག' },
+  { code: 'th-TH', name: 'Thai - ไทย' },
+  { code: 'da-DK', name: 'Danish - Dansk' },
   { code: 'es-ES', name: 'Spanish - Español' },
   { code: 'fr-FR', name: 'French - Français' },
   { code: 'de-DE', name: 'German - Deutsch' },
@@ -45,7 +48,6 @@ export default function App() {
   const jawMeshRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // Backend Health Check
   useEffect(() => {
     fetch(`${API_BASE}/health`)
       .then(res => res.json())
@@ -53,7 +55,6 @@ export default function App() {
       .catch(() => setBackendStatus('Server Waking Up...'));
   }, []);
 
-  // Initialize Three.js 3D Avatar Viewport
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
@@ -67,23 +68,18 @@ export default function App() {
     renderer.setPixelRatio(window.devicePixelRatio);
     currentMount.appendChild(renderer.domElement);
 
-    // Lighting
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
     const directionalLight = new THREE.DirectionalLight(0x3b82f6, 1.5);
     directionalLight.position.set(2, 4, 3);
     scene.add(directionalLight);
 
-    // Head Group
     const headGroup = new THREE.Group();
-
-    // Head Base (Sphere)
     const headGeo = new THREE.SphereGeometry(0.9, 32, 32);
     const headMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.4, metalness: 0.2 });
     const head = new THREE.Mesh(headGeo, headMat);
     headGroup.add(head);
 
-    // Eyes
     const eyeGeo = new THREE.SphereGeometry(0.12, 16, 16);
     const eyeMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, emissive: 0x1d4ed8 });
     
@@ -95,7 +91,6 @@ export default function App() {
     rightEye.position.set(0.3, 0.2, 0.75);
     headGroup.add(rightEye);
 
-    // Articulated Jaw / Lips (Box/Cylinder for Viseme Motion)
     const jawGeo = new THREE.BoxGeometry(0.4, 0.15, 0.2);
     const jawMat = new THREE.MeshStandardMaterial({ color: 0x60a5fa, roughness: 0.3 });
     const jaw = new THREE.Mesh(jawGeo, jawMat);
@@ -105,7 +100,6 @@ export default function App() {
 
     scene.add(headGroup);
 
-    // Animation Loop for idle floating and lip-sync simulation
     let animationFrameId;
     let clock = new THREE.Clock();
 
@@ -113,11 +107,9 @@ export default function App() {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Subtle idle breathing motion
       headGroup.rotation.y = Math.sin(elapsedTime * 0.8) * 0.05;
       headGroup.rotation.x = Math.cos(elapsedTime * 0.6) * 0.03;
 
-      // Lip-sync talking animation if active
       if (jawMeshRef.current) {
         if (isTranslating || isRecording) {
           jawMeshRef.current.scale.y = 1 + Math.sin(elapsedTime * 25) * 0.8;
@@ -132,7 +124,6 @@ export default function App() {
     };
     animate();
 
-    // Handle window resize
     const handleResize = () => {
       if (!currentMount) return;
       camera.aspect = currentMount.clientWidth / currentMount.clientHeight;
@@ -150,7 +141,6 @@ export default function App() {
     };
   }, [isTranslating, isRecording]);
 
-  // Real Web Speech API Microphone Integration
   const toggleRecording = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -207,7 +197,6 @@ export default function App() {
     }
   };
 
-  // Translation Handler via Gemini Backend
   const handleTranslate = async () => {
     if (!inputText.trim()) return;
     setIsTranslating(true);
@@ -253,7 +242,6 @@ export default function App() {
       </header>
 
       <main className="workspace-grid">
-        {/* Left Panel: Input, Mic & Language Config */}
         <div className="panel">
           <div className="panel-header">
             <h2 className="panel-title">
@@ -326,7 +314,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Right Panel: 3D Three.js Lip-Sync Avatar Viewport */}
         <div className="panel">
           <div className="panel-header">
             <h2 className="panel-title">
