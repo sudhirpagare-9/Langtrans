@@ -39,19 +39,22 @@ export default function App() {
   const [backendStatus, setBackendStatus] = useState('Connecting...');
   const [inputLang, setInputLang] = useState('hi-IN');
   const [targetLang, setTargetLang] = useState('mr-IN');
-  const [detectionStatus, setDetectionStatus] = useState('Ready for Live Speech Recognition & Auto-Detection');
+  const [detectionStatus, setDetectionStatus] = useState('Ready for Timed Speech Recognition & Auto-Detection');
   const [inputText, setInputText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [recordTimer, setRecordTimer] = useState(10);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [avatarState, setAvatarState] = useState('Idle - Ready for PWD Lip-Reading');
+  const [dbLogCount, setDbLogCount] = useState(0);
 
   const mountRef = useRef(null);
   const upperLipRef = useRef(null);
   const lowerLipRef = useRef(null);
   const jawRef = useRef(null);
   const recognitionRef = useRef(null);
+  const timerIntervalRef = useRef(null);
 
   // Backend Health Check
   useEffect(() => {
@@ -59,24 +62,34 @@ export default function App() {
       .then(res => res.json())
       .then(data => setBackendStatus(data.status === 'secure' ? 'Secure Online' : 'Online'))
       .catch(() => setBackendStatus('Secure Offline Enclave Active'));
+
+    // Load initial log count
+    try {
+      const logs = JSON.parse(localStorage.getItem('langtrans_unicode_database') || '[]');
+      setDbLogCount(logs.length);
+    } catch (e) {
+      console.error(e);
+    }
   }, []);
 
-  // Auto-save live translations to database logs with Unicode support and timestamps
+  // Auto-save input and output transcriptions to database logs with UTC and local timezone timestamps
   const autoSaveDatabaseLog = (source, translation, inLang, outLang) => {
     const now = new Date();
     const dbLogEntry = {
+      id: 'log_' + Date.now(),
       timestamp_utc: now.toISOString(),
       timestamp_local: now.toLocaleString(),
       input_language: inLang,
       output_language: outLang,
-      source_text_unicode: source,
-      translated_text_unicode: translation
+      input_transcript_unicode: source,
+      translated_output_unicode: translation
     };
 
     try {
       const existingLogs = JSON.parse(localStorage.getItem('langtrans_unicode_database') || '[]');
       const updated = [dbLogEntry, ...existingLogs];
       localStorage.setItem('langtrans_unicode_database', JSON.stringify(updated, null, 2));
+      setDbLogCount(updated.length);
     } catch (e) {
       console.error('Database write error', e);
     }
@@ -217,7 +230,7 @@ export default function App() {
     };
   }, [isTranslating, isRecording, isSpeaking]);
 
-  // Web Speech API Microphone Integration
+  // Timed Microphone Recording (Enabled for 10 seconds with countdown and auto-stop)
   const toggleRecording = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
@@ -227,12 +240,7 @@ export default function App() {
     }
 
     if (isRecording) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-      setIsRecording(false);
-      setAvatarState('Idle - Ready for PWD Lip-Reading');
-      setDetectionStatus('Microphone stopped.');
+      stopRecordingSession();
       return;
     }
 
@@ -244,9 +252,21 @@ export default function App() {
 
       recognition.onstart = () => {
         setIsRecording(true);
+        setRecordTimer(10);
         const langName = WORLD_LANGUAGES.find(l => l.code === inputLang)?.name || inputLang;
-        setDetectionStatus(`Listening & Detected Input Language: ${langName}`);
+        setDetectionStatus(`Listening (${langName}) - Auto-stop in 10s...`);
         setAvatarState('Listening to Live Speech...');
+
+        // Start 10-second countdown timer
+        let timeLeft = 10;
+        timerIntervalRef.current = setInterval(() => {
+          timeLeft -= 1;
+          setRecordTimer(timeLeft);
+          if (timeLeft <= 0) {
+            clearInterval(timerIntervalRef.current);
+            stopRecordingSession();
+          }
+        }, 1000);
       };
 
       recognition.onresult = (event) => {
@@ -255,15 +275,13 @@ export default function App() {
           transcript += event.results[i][0].transcript;
         }
         setInputText(transcript);
-        const langName = WORLD_LANGUAGES.find(l => l.code === inputLang)?.name || inputLang;
-        setDetectionStatus(`Detected Language: ${langName} (Live Stream Active)`);
       };
 
       recognition.onerror = (event) => {
         console.error('Speech recognition error', event.error);
         setDetectionStatus('Microphone error or permission denied.');
         setAvatarState('Microphone Error');
-        setIsRecording(false);
+        stopRecordingSession();
       };
 
       recognition.onend = () => {
@@ -280,7 +298,23 @@ export default function App() {
     }
   };
 
-  // Text-to-Speech Speaker Toggle
+  const stopRecordingSession = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    setIsRecording(false);
+    setAvatarState('Idle - Ready for PWD Lip-Reading');
+    setDetectionStatus('Microphone recording completed successfully.');
+  };
+
+  // Text-to-Speech Speaker Toggle Button Handler
   const toggleSpeechAudio = () => {
     if (!translatedText.trim()) {
       alert('No translated text available for voice output.');
@@ -320,15 +354,13 @@ export default function App() {
     }
   };
 
-  // Fixed Translation Handler with multi-schema payload and robust fallback to eliminate 422 errors
+  // Translation Handler with multi-schema payload support and database logging
   const handleTranslate = async () => {
     if (!inputText.trim()) return;
     setIsTranslating(true);
     setAvatarState('Translating & Synchronizing Lips...');
 
     let resultText = '';
-    
-    // Construct payload supporting multiple backend schema naming conventions (preventing 422 Unprocessable Content)
     const payloadVariants = [
       { text: inputText, source_language: inputLang, target_language: targetLang },
       { text: inputText, source_lang: inputLang, target_lang: targetLang },
@@ -351,12 +383,11 @@ export default function App() {
           break;
         }
       } catch (e) {
-        console.warn('Attempt with payload variant failed:', e);
+        console.warn('Payload variant attempt failed:', e);
       }
     }
 
     if (!success) {
-      // Seamless client-side intelligent fallback if backend endpoint expects different schema or is unreachable
       const targetName = WORLD_LANGUAGES.find(l => l.code === targetLang)?.name || targetLang;
       if (targetLang.startsWith('mr')) {
         resultText = `[मराठी भाषांतर]: ${inputText}`;
@@ -370,7 +401,7 @@ export default function App() {
     setTranslatedText(resultText);
     setAvatarState('3D Lip-Sync Ready');
     
-    // Auto-save transaction to database logs
+    // Auto-save input and output to database with UTC and local timezone timestamps
     autoSaveDatabaseLog(inputText, resultText, inputLang, targetLang);
 
     setTimeout(() => setAvatarState('Idle - Ready for PWD Lip-Reading'), 2500);
@@ -388,6 +419,9 @@ export default function App() {
           <div className="badge badge-secure" style={{ fontSize: '0.75rem', backgroundColor: '#1e293b', border: '1px solid #334155', padding: '0.3rem 0.6rem', borderRadius: '4px' }}>
             GDPR / NIST SP 800-53 Compliant
           </div>
+          <div className="badge badge-db" style={{ fontSize: '0.75rem', backgroundColor: '#1e293b', border: '1px solid #334155', padding: '0.3rem 0.6rem', borderRadius: '4px', color: '#38bdf8' }}>
+            DB Logs: {dbLogCount} Saved (UTC & Local)
+          </div>
           <div className="badge badge-status" style={{ fontSize: '0.75rem', backgroundColor: '#1e293b', border: '1px solid #334155', padding: '0.3rem 0.6rem', borderRadius: '4px' }}>
             Backend: {backendStatus}
           </div>
@@ -395,7 +429,7 @@ export default function App() {
       </header>
 
       <main className="workspace-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-        {/* Left Panel: Input & Output Language Dropdowns, Mic, Status & Transcript */}
+        {/* Left Panel: Input & Output Language Dropdowns, Timed Mic, Status & Transcript */}
         <div className="panel" style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px', padding: '1.25rem' }}>
           <div className="panel-header" style={{ marginBottom: '1rem' }}>
             <h2 className="panel-title" style={{ fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -403,6 +437,7 @@ export default function App() {
             </h2>
           </div>
 
+          {/* Both Input and Output Language Dropdowns side-by-side */}
           <div className="language-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
             <div className="input-group">
               <label htmlFor="input-lang" style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem', color: '#94a3b8' }}>Input Language (Mic)</label>
@@ -437,9 +472,17 @@ export default function App() {
             </div>
           </div>
 
-          <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '0.6rem 0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <span style={{ height: '9px', width: '9px', backgroundColor: isRecording ? '#22c55e' : '#38bdf8', borderRadius: '50%', display: 'inline-block', boxShadow: isRecording ? '0 0 8px #22c55e' : 'none' }}></span>
-            <span style={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: '500' }}>{detectionStatus}</span>
+          {/* Live Status Banner with Timed Recording Indicator */}
+          <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '6px', padding: '0.6rem 0.9rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <span style={{ height: '9px', width: '9px', backgroundColor: isRecording ? '#22c55e' : '#38bdf8', borderRadius: '50%', display: 'inline-block', boxShadow: isRecording ? '0 0 8px #22c55e' : 'none' }}></span>
+              <span style={{ fontSize: '0.85rem', color: '#e2e8f0', fontWeight: '500' }}>{detectionStatus}</span>
+            </div>
+            {isRecording && (
+              <span style={{ fontSize: '0.8rem', color: '#f43f5e', fontWeight: '700', backgroundColor: 'rgba(244,63,94,0.15)', padding: '0.1rem 0.5rem', borderRadius: '4px' }}>
+                ⏱️ {recordTimer}s left
+              </span>
+            )}
           </div>
 
           <div className="input-group" style={{ marginBottom: '1rem' }}>
@@ -448,7 +491,7 @@ export default function App() {
               id="source-text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Speak into microphone or type text in selected language..."
+              placeholder="Speak into microphone (auto-stops in 10s) or type text..."
               style={{ width: '100%', height: '110px', padding: '0.75rem', backgroundColor: '#0f172a', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px', resize: 'vertical' }}
             />
           </div>
@@ -459,7 +502,7 @@ export default function App() {
               style={{ flex: 1, padding: '0.6rem 1rem', backgroundColor: isRecording ? '#ef4444' : '#334155', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '600' }}
               onClick={toggleRecording}
             >
-              {isRecording ? '🛑 Stop Mic' : '🎤 Live Mic'}
+              {isRecording ? `🛑 Stop (${recordTimer}s)` : '🎤 Timed Mic (10s)'}
             </button>
             <button 
               className="btn btn-primary"
@@ -471,14 +514,16 @@ export default function App() {
             </button>
           </div>
 
+          {/* Translation Output Header with Prominent Speaker Toggle Button */}
           <div className="panel-header" style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h2 className="panel-title" style={{ fontSize: '1rem', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span>📄</span> 3. Translation Output & Voice
+              <span>📄</span> 3. Translation Output Feed
             </h2>
             <button 
+              id="speaker-toggle-btn"
               style={{
-                width: '42px',
-                height: '42px',
+                width: '44px',
+                height: '44px',
                 borderRadius: '50%',
                 backgroundColor: isSpeaking ? '#ef4444' : '#3b82f6',
                 color: '#fff',
@@ -487,17 +532,18 @@ export default function App() {
                 justifyContent: 'center',
                 border: 'none',
                 cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-                fontSize: '1.1rem'
+                boxShadow: '0 2px 10px rgba(59,130,246,0.4)',
+                fontSize: '1.2rem',
+                transition: 'background-color 0.2s'
               }}
               onClick={toggleSpeechAudio}
-              title="Toggle Text-to-Speech Voice Output"
+              title="Toggle Text-to-Speech Speaker Audio Output"
             >
               {isSpeaking ? '🔇' : '🔊'}
             </button>
           </div>
           <div className="output-box" style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '4px', padding: '0.75rem', minHeight: '80px', fontSize: '0.9rem', color: '#e2e8f0' }}>
-            {translatedText || 'Translated text and auto-saved database timestamp logs will appear here...'}
+            {translatedText || 'Translated text and auto-saved database timestamp logs (UTC & Local) will appear here...'}
           </div>
         </div>
 
@@ -511,7 +557,7 @@ export default function App() {
           </div>
 
           <div className="viewport-container" ref={mountRef} style={{ width: '100%', height: '390px', position: 'relative', backgroundColor: '#0f172a', borderRadius: '6px', border: '1px solid #334155', overflow: 'hidden' }}>
-            <div className="viewport-overlay-status" style={{ position: 'absolute', bottom: '1rem', width: '100%', textAlign: 'center', pointerEvents: 'none', zIndex: '10' }}>
+            <div className="viewport-overlay-status" style={{ position: 'absolute', bottom: '1rem', width: '100%', textAlign: 'center', pointerEvents: 'none', zIndex: 10 }}>
               <p style={{ fontWeight: '600', color: '#60a5fa', textShadow: '0 2px 6px rgba(0,0,0,0.9)', fontSize: '0.9rem', margin: 0 }}>{avatarState}</p>
               <span style={{ fontSize: '0.7rem', color: '#94a3b8' }}>Real-Time 3D Lip Articulation for PWD Accessibility</span>
             </div>
