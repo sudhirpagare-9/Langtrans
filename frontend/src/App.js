@@ -15,14 +15,14 @@ const LANGUAGE_LIST = [
   { code: 'or-IN', name: 'Odia - ଓଡ଼ିଆ (India)', group: 'Top Indian Languages', speechSupported: true },
   { code: 'as-IN', name: 'Assamese - অসমীয়া (India)', group: 'Top Indian Languages', speechSupported: true },
   { code: 'ne-IN', name: 'Nepali - नेपाली (India/Nepal)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'bho-IN', name: 'Bhojpuri - भोजपुरी (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Text translation & 3D viseme active.' },
-  { code: 'mai-IN', name: 'Maithili - मैथिली (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Visual 3D sync active.' },
-  { code: 'sat-IN', name: 'Santali - संताली (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Manual text or cloud fallback.' },
-  { code: 'ks-IN', name: 'Kashmiri - कॉशुर (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited browser speech support.' },
-  { code: 'kok-IN', name: 'Konkani - कोंकणी (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Browser speech engine partial.' },
-  { code: 'sd-IN', name: 'Sindhi - سنڌي (India/Pakistan)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited native speech support.' },
-  { code: 'doi-IN', name: 'Dogri - डोगरी (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited native speech support.' },
-  { code: 'sa-IN', name: 'Sanskrit - संस्कृतम् (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Regional fallback voice.' },
+  { code: 'bho-IN', name: 'Bhojpuri - भोजपुरी (India)', group: 'Top Indian Languages', speechSupported: false },
+  { code: 'mai-IN', name: 'Maithili - मैथिली (India)', group: 'Top Indian Languages', speechSupported: false },
+  { code: 'sat-IN', name: 'Santali - संताली (India)', group: 'Top Indian Languages', speechSupported: false },
+  { code: 'ks-IN', name: 'Kashmiri - कॉशुर (India)', group: 'Top Indian Languages', speechSupported: false },
+  { code: 'kok-IN', name: 'Konkani - कोंकणी (India)', group: 'Top Indian Languages', speechSupported: false },
+  { code: 'sd-IN', name: 'Sindhi - سنڌي (India/Pakistan)', group: 'Top Indian Languages', speechSupported: false },
+  { code: 'doi-IN', name: 'Dogri - डोगरी (India)', group: 'Top Indian Languages', speechSupported: false },
+  { code: 'sa-IN', name: 'Sanskrit - संस्कृतम् (India)', group: 'Top Indian Languages', speechSupported: false },
   { code: 'en-US', name: 'English (United States)', group: 'Top World Languages', speechSupported: true },
   { code: 'zh-CN', name: 'Mandarin Chinese - 中文 (China)', group: 'Top World Languages', speechSupported: true },
   { code: 'es-ES', name: 'Spanish - Español (Spain/LatAm)', group: 'Top World Languages', speechSupported: true },
@@ -71,29 +71,30 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
 
   return (
     <div style={{ position: 'relative', width: '100%' }} ref={dropdownRef}>
-      <label style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '6px', fontWeight: '600' }}>{label}</label>
+      <label style={{ fontSize: '0.78rem', color: '#38bdf8', display: 'block', marginBottom: '5px', fontWeight: '700', letterSpacing: '0.5px' }}>{label}</label>
       <div 
         onClick={() => setIsOpen(!isOpen)}
         style={{ 
           width: '100%', 
-          padding: '12px 14px', 
+          padding: '10px 14px', 
           backgroundColor: '#0f172a', 
-          color: '#fff', 
-          border: '1px solid #334155', 
+          color: '#f8fafc', 
+          border: '1px solid #1e293b', 
           borderRadius: '8px', 
           cursor: 'pointer',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           boxSizing: 'border-box',
-          fontSize: '0.9rem',
-          minHeight: '44px'
+          fontSize: '0.85rem',
+          minHeight: '40px',
+          boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.3)'
         }}
       >
         <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {selectedObj ? selectedObj.name : 'Select Language...'}
         </span>
-        <span style={{ fontSize: '0.75rem', color: '#38bdf8', marginLeft: '8px' }}>▼</span>
+        <span style={{ fontSize: '0.7rem', color: '#38bdf8', marginLeft: '8px' }}>▼</span>
       </div>
 
       {isOpen && (
@@ -104,15 +105,15 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
           right: 0,
           marginTop: '6px',
           backgroundColor: '#0f172a',
-          border: '1px solid #475569',
+          border: '1px solid #38bdf8',
           borderRadius: '8px',
           zIndex: 1000,
-          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.7)',
-          maxHeight: '260px',
+          boxShadow: '0 12px 30px rgba(0,0,0,0.8)',
+          maxHeight: '240px',
           display: 'flex',
           flexDirection: 'column'
         }}>
-          <div style={{ padding: '8px', borderBottom: '1px solid #334155' }}>
+          <div style={{ padding: '8px', borderBottom: '1px solid #1e293b' }}>
             <input 
               type="text"
               placeholder="🔍 Search language..."
@@ -124,15 +125,15 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
                 padding: '8px 12px',
                 backgroundColor: '#1e293b',
                 color: '#fff',
-                border: '1px solid #475569',
+                border: '1px solid #334155',
                 borderRadius: '6px',
-                fontSize: '0.85rem',
+                fontSize: '0.82rem',
                 boxSizing: 'border-box',
                 outline: 'none'
               }}
             />
           </div>
-          <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+          <div style={{ overflowY: 'auto', maxHeight: '180px' }}>
             {filteredLanguages.length > 0 ? (
               filteredLanguages.map(lang => (
                 <div
@@ -143,12 +144,12 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
                     setSearchTerm('');
                   }}
                   style={{
-                    padding: '10px 14px',
+                    padding: '8px 12px',
                     cursor: 'pointer',
-                    fontSize: '0.85rem',
+                    fontSize: '0.82rem',
                     backgroundColor: lang.code === selectedLang ? '#1e293b' : 'transparent',
-                    color: lang.code === selectedLang ? '#38bdf8' : '#f8fafc',
-                    borderBottom: '1px solid rgba(51, 65, 85, 0.3)'
+                    color: lang.code === selectedLang ? '#38bdf8' : '#e2e8f0',
+                    borderBottom: '1px solid rgba(51, 65, 85, 0.2)'
                   }}
                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1e293b'}
                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = lang.code === selectedLang ? '#1e293b' : 'transparent'}
@@ -157,7 +158,7 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
                 </div>
               ))
             ) : (
-              <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+              <div style={{ padding: '10px', textAlign: 'center', color: '#94a3b8', fontSize: '0.8rem' }}>
                 No language found
               </div>
             )}
@@ -176,16 +177,16 @@ function App() {
   const [lastRawTranslation, setLastRawTranslation] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  
-  // Mobile Tab Navigation State: 'input' | 'viseme' | 'output' | 'all'
-  const [activeMobileTab, setActiveMobileTab] = useState('all');
+
+  // Mic Sensitivity Controls (0 - 100) & Audio Visualizer State
+  const [micSensitivity, setMicSensitivity] = useState(75);
+  const [audioLevel, setAudioLevel] = useState(0);
 
   const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('langtrans_gemini_key') || '');
   const [showSettings, setShowSettings] = useState(false);
-  const translationMode = 'hybrid';
 
   const [autoSpeakOutput, setAutoSpeakOutput] = useState(true);
-  const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(false);
+  const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(true);
 
   const [dbLogs, setDbLogs] = useState([]);
   const [statusMsg, setStatusMsg] = useState('Ready. Speech engine & 3D viseme online.');
@@ -203,9 +204,13 @@ function App() {
   const transcriptScrollRef = useRef(null);
   const translationScrollRef = useRef(null);
 
+  const audioCtxRef = useRef(null);
+  const analyserRef = useRef(null);
+  const micStreamRef = useRef(null);
+  const animFrameRef = useRef(null);
+
   const lastSpokenTextRef = useRef('');
   const speechActiveOrCooldownRef = useRef(false);
-  const speechCooldownTimerRef = useRef(null);
 
   useEffect(() => {
     isListeningRef.current = isListening;
@@ -227,6 +232,73 @@ function App() {
     }
   }, [translation]);
 
+  // Audio Context & Mic Analyzer Initialization
+  useEffect(() => {
+    const initAudioMeter = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        micStreamRef.current = stream;
+
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        const audioCtx = new AudioCtx();
+        audioCtxRef.current = audioCtx;
+
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        analyserRef.current = analyser;
+
+        const source = audioCtx.createMediaStreamSource(stream);
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
+        const updateLevel = () => {
+          if (analyserRef.current && isListeningRef.current) {
+            analyserRef.current.getByteFrequencyData(dataArray);
+            let sum = 0;
+            for (let i = 0; i < dataArray.length; i++) {
+              sum += dataArray[i];
+            }
+            const average = sum / dataArray.length;
+            // Apply sensitivity scaling factor (0.1 to 2.5x)
+            const sensitivityMultiplier = (micSensitivity / 50);
+            const rawPct = Math.min(100, Math.round((average / 128) * 100 * sensitivityMultiplier));
+            setAudioLevel(rawPct);
+          } else {
+            setAudioLevel(0);
+          }
+          animFrameRef.current = requestAnimationFrame(updateLevel);
+        };
+        updateLevel();
+      } catch (err) {
+        console.warn('Microphone audio metering unavailable:', err);
+      }
+    };
+
+    if (isListening) {
+      initAudioMeter();
+    } else {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (audioCtxRef.current) {
+        audioCtxRef.current.close();
+      }
+      setAudioLevel(0);
+    }
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      if (micStreamRef.current) {
+        micStreamRef.current.getTracks().forEach(track => track.stop());
+      }
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
+        audioCtxRef.current.close();
+      }
+    };
+  }, [isListening, micSensitivity]);
+
   useEffect(() => {
     const updateVoices = () => {
       if ('speechSynthesis' in window) {
@@ -236,8 +308,7 @@ function App() {
     updateVoices();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = updateVoices;
-      setTimeout(updateVoices, 200);
-      setTimeout(updateVoices, 1000);
+      setTimeout(updateVoices, 300);
     }
   }, []);
 
@@ -297,35 +368,38 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  // Three.js 3D Viseme Mouth Mesh Setup
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0b132b);
+    scene.background = new THREE.Color(0x070a12);
 
     const camera = new THREE.PerspectiveCamera(45, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
-    camera.position.set(0, 0, 5.5);
+    camera.position.set(0, 0, 5.2);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
-    renderer.shadowMap.enabled = true;
     currentMount.appendChild(renderer.domElement);
 
-    const ambientLight = new THREE.AmbientLight(0xfff0f5, 1.2);
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.4);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0xffffff, 2.0);
+    const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 2.2);
     dirLight1.position.set(2, 4, 5);
     scene.add(dirLight1);
 
+    const dirLight2 = new THREE.DirectionalLight(0x8b5cf6, 1.8);
+    dirLight2.position.set(-2, -4, 3);
+    scene.add(dirLight2);
+
     const lipMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xd97c88,
-      roughness: 0.22,
-      metalness: 0.05,
-      clearcoat: 0.85,
+      color: 0xf43f5e,
+      roughness: 0.18,
+      metalness: 0.1,
+      clearcoat: 0.9,
       clearcoatRoughness: 0.1,
-      transmission: 0.08,
       reflectivity: 0.95
     });
 
@@ -340,7 +414,7 @@ function App() {
     lowerShape.quadraticCurveTo(0, -0.9, 1.5, -0.1);
     lowerShape.quadraticCurveTo(0, -0.2, -1.5, -0.1);
 
-    const extrudeSettings = { depth: 0.6, bevelEnabled: true, bevelSegments: 6, steps: 2, bevelSize: 0.2, bevelThickness: 0.2 };
+    const extrudeSettings = { depth: 0.5, bevelEnabled: true, bevelSegments: 6, steps: 2, bevelSize: 0.18, bevelThickness: 0.18 };
     
     const upperGeo = new THREE.ExtrudeGeometry(upperShape, extrudeSettings);
     const lowerGeo = new THREE.ExtrudeGeometry(lowerShape, extrudeSettings);
@@ -367,9 +441,9 @@ function App() {
       if (upperLip && lowerLip) {
         let speakFactor = 0;
         if (isSpeakingRef.current) {
-          speakFactor = Math.sin(elapsedTime * 35) * 0.28 + Math.cos(elapsedTime * 22) * 0.14;
+          speakFactor = Math.sin(elapsedTime * 35) * 0.3 + Math.cos(elapsedTime * 22) * 0.15;
         } else if (isListeningRef.current) {
-          speakFactor = Math.sin(elapsedTime * 8) * 0.04;
+          speakFactor = Math.sin(elapsedTime * 8) * 0.05;
         } else {
           speakFactor = Math.sin(elapsedTime * 2) * 0.02;
         }
@@ -398,7 +472,6 @@ function App() {
     };
   }, []);
 
-  // FIXED: Word-boundary regular expression replacement prevents corruption like "Maratनमस्कार"
   const performFallbackTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
@@ -412,9 +485,7 @@ function App() {
         "hi": "नमस्ते",
         "how are you": "आप कैसे हैं?",
         "what is your name": "आपका नाम क्या है?",
-        "thank you": "धन्यवाद",
-        "thanks": "शुक्रिया",
-        "good morning": "सुप्रभात"
+        "thank you": "धन्यवाद"
       };
       if (enHiMap[lower]) return enHiMap[lower];
 
@@ -422,19 +493,7 @@ function App() {
         .replace(/\bhello\b/gi, 'नमस्ते')
         .replace(/\bhi\b/gi, 'नमस्ते')
         .replace(/\bhow are you\b/gi, 'आप कैसे हैं')
-        .replace(/\bwhat is your name\b/gi, 'आपका नाम क्या है')
-        .replace(/\bthank you\b/gi, 'धन्यवाद')
-        .replace(/\bthanks\b/gi, 'शुक्रिया')
-        .replace(/\bgood morning\b/gi, 'सुप्रभात')
-        .replace(/\bdad\b/gi, 'पापा')
-        .replace(/\bbeta\b/gi, 'बेटा')
-        .replace(/\bphone\b/gi, 'फ़ोन')
-        .replace(/\bwant\b/gi, 'चाहिए')
-        .replace(/\btranslation\b/gi, 'अनुवाद')
-        .replace(/\baudio\b/gi, 'ऑडियो')
-        .replace(/\bworking\b/gi, 'काम कर रहा है')
-        .replace(/\bnot\b/gi, 'नहीं')
-        .replace(/\bis\b/gi, 'है');
+        .replace(/\bthank you\b/gi, 'धन्यवाद');
     }
 
     if (fromLang === 'en-US' && toLang === 'mr-IN') {
@@ -443,8 +502,7 @@ function App() {
         "hi": "नमस्कार",
         "how are you": "तुम्ही कसे आहात?",
         "what is your name": "तुमचे नाव काय आहे?",
-        "thank you": "धन्यवाद",
-        "good morning": "सुप्रभात"
+        "thank you": "धन्यवाद"
       };
       if (enMrMap[lower]) return enMrMap[lower];
 
@@ -452,33 +510,7 @@ function App() {
         .replace(/\bhello\b/gi, 'नमस्कार')
         .replace(/\bhi\b/gi, 'नमस्कार')
         .replace(/\bhow are you\b/gi, 'तुम्ही कसे आहात')
-        .replace(/\bwhat is your name\b/gi, 'तुमचे नाव काय आहे')
-        .replace(/\bthank you\b/gi, 'धन्यवाद')
-        .replace(/\bdad\b/gi, 'पप्पा')
-        .replace(/\btranslation\b/gi, 'भाषांतर')
-        .replace(/\baudio\b/gi, 'ऑडिओ')
-        .replace(/\bworking\b/gi, 'चालू आहे')
-        .replace(/\bnot\b/gi, 'नाही')
-        .replace(/\bis\b/gi, 'आहे');
-    }
-
-    if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
-      const hiMrMap = {
-        "नमस्ते": "नमस्कार",
-        "आप कैसे हैं?": "तुम्ही कसे आहात?",
-        "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
-        "धन्यवाद": "धन्यवाद",
-        "मैं ठीक हूँ": "मी मजेत आहे"
-      };
-      if (hiMrMap[cleanText]) return hiMrMap[cleanText];
-
-      return cleanText
-        .replace(/\bनमस्ते\b/g, 'नमस्कार')
-        .replace(/\bआप\b/g, 'तुम्ही')
-        .replace(/\bक्या\b/g, 'काय')
-        .replace(/\bहैं\b/g, 'आहेत')
-        .replace(/\bहै\b/g, 'आहे')
-        .replace(/\bनहीं\b/g, 'नाही');
+        .replace(/\bthank you\b/gi, 'धन्यवाद');
     }
 
     return `[${toLang.slice(0, 2).toUpperCase()}] ${cleanText}`;
@@ -489,7 +521,7 @@ function App() {
     if (!cleanText) return '';
     if (fromLang === toLang) return cleanText;
 
-    if (geminiApiKey && translationMode === 'hybrid') {
+    if (geminiApiKey) {
       try {
         const targetLangObj = LANGUAGE_LIST.find(l => l.code === toLang);
         const targetLangName = targetLangObj ? targetLangObj.name : toLang;
@@ -502,7 +534,7 @@ function App() {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `Translate the following text from ${sourceLangName} to ${targetLangName}. Return ONLY the direct translation without any extra formatting, quotes, or conversational preamble.\n\nText: "${cleanText}"`
+                text: `Translate accurately from ${sourceLangName} to ${targetLangName}. Return ONLY the translation output without quotes or commentary.\n\nText: "${cleanText}"`
               }]
             }]
           })
@@ -514,7 +546,7 @@ function App() {
           if (translated) return translated;
         }
       } catch (err) {
-        console.warn('Gemini API fallback to word dictionary:', err);
+        console.warn('Gemini fallback to dictionary:', err);
       }
     }
 
@@ -526,26 +558,19 @@ function App() {
 
     try {
       window.speechSynthesis.cancel();
-
       speechActiveOrCooldownRef.current = true;
       lastSpokenTextRef.current = textToSpeak.trim();
 
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = targetLang;
       utterance.rate = 0.95;
-      utterance.pitch = 1.0;
 
       activeUtterancesRef.current.push(utterance);
 
       const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
-      
       let matchedVoice = voices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase());
       if (!matchedVoice) {
-        const shortLang = targetLang.slice(0, 2).toLowerCase();
-        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(shortLang));
-      }
-      if (!matchedVoice && targetLang.startsWith('mr')) {
-        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
+        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(targetLang.slice(0, 2).toLowerCase()));
       }
       if (matchedVoice) {
         utterance.voice = matchedVoice;
@@ -555,45 +580,27 @@ function App() {
       utterance.onend = () => {
         setIsSpeaking(false);
         activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
-        
-        if (speechCooldownTimerRef.current) clearTimeout(speechCooldownTimerRef.current);
-        speechCooldownTimerRef.current = setTimeout(() => {
-          speechActiveOrCooldownRef.current = false;
-        }, 1500);
+        setTimeout(() => { speechActiveOrCooldownRef.current = false; }, 1200);
       };
       utterance.onerror = () => {
         setIsSpeaking(false);
-        activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
         speechActiveOrCooldownRef.current = false;
       };
 
       setTimeout(() => {
-        try {
-          window.speechSynthesis.speak(utterance);
-        } catch (err) {
-          setIsSpeaking(false);
-          speechActiveOrCooldownRef.current = false;
-        }
+        try { window.speechSynthesis.speak(utterance); } catch (e) { setIsSpeaking(false); }
       }, 100);
     } catch (err) {
       setIsSpeaking(false);
-      speechActiveOrCooldownRef.current = false;
     }
   }, [autoSpeakOutput]);
 
   const handleTranslationAndSpeech = useCallback(async (text) => {
     if (!text || !text.trim()) return;
-
     const cleanedText = text.trim();
 
     if (speechActiveOrCooldownRef.current) return;
-
-    if (lastSpokenTextRef.current && (
-      cleanedText.toLowerCase() === lastSpokenTextRef.current.toLowerCase() ||
-      lastSpokenTextRef.current.toLowerCase().includes(cleanedText.toLowerCase())
-    )) {
-      return; 
-    }
+    if (lastSpokenTextRef.current && lastSpokenTextRef.current.toLowerCase() === cleanedText.toLowerCase()) return;
 
     const translatedText = await performTranslation(cleanedText, inputLang, outputLang);
     setLastRawTranslation(translatedText);
@@ -615,7 +622,7 @@ function App() {
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setStatusMsg('Speech Recognition API not supported in this browser.');
+      setStatusMsg('Speech Recognition API not supported.');
       return;
     }
 
@@ -636,19 +643,14 @@ function App() {
           final += event.results[i][0].transcript;
         }
       }
-
       if (final) {
-        const cleanedText = final.trim();
-        handleTranslationAndSpeech(cleanedText);
+        handleTranslationAndSpeech(final.trim());
       }
     };
 
-    recognition.onerror = (event) => {
-      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-        setIsListening(false);
-        isListeningRef.current = false;
-        setStatusMsg('Microphone blocked.');
-      }
+    recognition.onerror = () => {
+      setIsListening(false);
+      setStatusMsg('Mic audio status interrupted.');
     };
 
     recognition.onend = () => {
@@ -656,9 +658,7 @@ function App() {
         if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
         restartTimeoutRef.current = setTimeout(() => {
           if (!userStoppedRef.current && isListeningRef.current && recognitionRef.current) {
-            try {
-              recognitionRef.current.start();
-            } catch (e) {}
+            try { recognitionRef.current.start(); } catch (e) {}
           }
         }, 300);
       } else {
@@ -670,20 +670,13 @@ function App() {
     recognitionRef.current = recognition;
     userStoppedRef.current = false;
     isListeningRef.current = true;
-    try {
-      recognition.start();
-    } catch (e) {
-      setIsListening(false);
-      isListeningRef.current = false;
-    }
+    try { recognition.start(); } catch (e) { setIsListening(false); }
 
     return () => {
       userStoppedRef.current = true;
       if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {}
+        try { recognitionRef.current.stop(); } catch (e) {}
       }
     };
   }, [inputLang, handleTranslationAndSpeech]);
@@ -695,9 +688,7 @@ function App() {
       isListeningRef.current = false;
       if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.stop();
-        } catch (e) {}
+        try { recognitionRef.current.stop(); } catch (e) {}
       }
       setStatusMsg('Mic stopped.');
     } else {
@@ -705,9 +696,7 @@ function App() {
       setIsListening(true);
       isListeningRef.current = true;
       if (recognitionRef.current) {
-        try {
-          recognitionRef.current.start();
-        } catch (e) {}
+        try { recognitionRef.current.start(); } catch (e) {}
       }
       setStatusMsg('🎙️ Mic active & listening...');
     }
@@ -719,242 +708,299 @@ function App() {
     }
   };
 
-  const selectedInputObj = LANGUAGE_LIST.find(l => l.code === inputLang);
-  const selectedOutputObj = LANGUAGE_LIST.find(l => l.code === outputLang);
-
   return (
-    <div style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", backgroundColor: '#090d16', color: '#f8fafc', minHeight: '100vh', padding: '16px', boxSizing: 'border-box' }}>
+    <div style={{ 
+      fontFamily: "'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif", 
+      backgroundColor: '#070a12', 
+      color: '#f8fafc', 
+      height: '100vh', 
+      padding: '12px 16px', 
+      boxSizing: 'border-box',
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
       
-      {/* Header Bar with Gradient Accent */}
-      <header style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #1e293b', paddingBottom: '14px', marginBottom: '16px', gap: '12px' }}>
+      {/* Top Header Bar */}
+      <header style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        borderBottom: '1px solid #1e293b', 
+        paddingBottom: '10px', 
+        marginBottom: '10px',
+        flexShrink: 0
+      }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', boxShadow: '0 4px 12px rgba(56, 189, 248, 0.3)' }}>
-            🌐
+          <div style={{ 
+            width: '38px', 
+            height: '38px', 
+            borderRadius: '12px', 
+            background: 'linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            fontSize: '1.2rem', 
+            boxShadow: '0 0 16px rgba(6, 182, 212, 0.4)' 
+          }}>
+            ⚡
           </div>
           <div>
-            <h1 style={{ fontSize: '1.2rem', fontWeight: '700', margin: 0, background: 'linear-gradient(90deg, #ffffff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              AI Studio Real-Time Translator
+            <h1 style={{ fontSize: '1.15rem', fontWeight: '800', margin: 0, background: 'linear-gradient(90deg, #38bdf8, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+              Vibrant AI Studio Real-Time Viseme Studio
             </h1>
-            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>GDPR & NIST SP 800-53 Compliant • 3D Viseme Engine</span>
+            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>GDPR & NIST Compliant • Full 100vh Fit Viewport</span>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span style={{ backgroundColor: '#0284c7', color: '#fff', padding: '6px 10px', borderRadius: '6px', fontWeight: '600', fontSize: '0.75rem' }}>
-            💾 Logs: {dbLogs.length}
+        {/* Global Control Bar */}
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38bdf8', border: '1px solid #0284c7', padding: '5px 10px', borderRadius: '6px', fontWeight: '700', fontSize: '0.75rem' }}>
+            💾 Storage Logs: {dbLogs.length}
           </span>
-          <button onClick={() => setShowSettings(!showSettings)} style={{ backgroundColor: '#1e293b', color: '#38bdf8', border: '1px solid #334155', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem', minHeight: '36px' }}>
-            ⚙️ Settings
+          <button onClick={() => setShowSettings(!showSettings)} style={{ backgroundColor: '#1e293b', color: '#38bdf8', border: '1px solid #334155', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.78rem' }}>
+            ⚙️ API Key
           </button>
-          <button onClick={handleExportLogs} style={{ backgroundColor: '#16a34a', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem', minHeight: '36px' }}>
+          <button onClick={handleExportLogs} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.78rem' }}>
             📥 Export
           </button>
-          <button onClick={handleClearSession} style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.8rem', minHeight: '36px' }}>
+          <button onClick={handleClearSession} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.78rem' }}>
             🗑️ Clear
           </button>
         </div>
       </header>
 
-      {/* Settings Panel Drawer */}
+      {/* Gemini Settings Drawer */}
       {showSettings && (
-        <div style={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '10px', padding: '16px', marginBottom: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: '0.95rem', color: '#38bdf8' }}>Google Gemini Neural Translation API Key</h3>
-            <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.1rem' }}>✕</button>
-          </div>
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-            <input 
-              type="password"
-              placeholder="Paste Gemini API Key (e.g. AIzaSy...)"
-              value={geminiApiKey}
-              onChange={(e) => {
-                setGeminiApiKey(e.target.value);
-                localStorage.setItem('langtrans_gemini_key', e.target.value);
-              }}
-              style={{ flexGrow: 1, padding: '10px', backgroundColor: '#1e293b', color: '#fff', border: '1px solid #475569', borderRadius: '6px', fontSize: '0.85rem', outline: 'none' }}
-            />
-            <span style={{ fontSize: '0.8rem', color: geminiApiKey ? '#4ade80' : '#fbbf24' }}>
-              {geminiApiKey ? '✓ Neural Cloud Active' : 'ℹ️ Fast Offline Dictionary Active'}
-            </span>
-          </div>
+        <div style={{ backgroundColor: '#0f172a', border: '1px solid #38bdf8', borderRadius: '8px', padding: '10px 14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <span style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: '700' }}>Gemini API Key:</span>
+          <input 
+            type="password"
+            placeholder="Paste Gemini API Key..."
+            value={geminiApiKey}
+            onChange={(e) => {
+              setGeminiApiKey(e.target.value);
+              localStorage.setItem('langtrans_gemini_key', e.target.value);
+            }}
+            style={{ flexGrow: 1, padding: '6px 10px', backgroundColor: '#1e293b', color: '#fff', border: '1px solid #334155', borderRadius: '6px', fontSize: '0.8rem', outline: 'none' }}
+          />
+          <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
         </div>
       )}
 
-      {/* Persistent Storage Bar */}
-      <div style={{ backgroundColor: '#0f172a', border: '1px solid #1e293b', borderRadius: '8px', padding: '10px 14px', marginBottom: '16px', fontSize: '0.78rem', color: '#94a3b8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
-        <span>📁 <strong>DB Storage:</strong> localStorage['langtrans_db_logs']</span>
-        <span style={{ color: '#38bdf8' }}>Timestamps: Local & UTC Dual-Sync</span>
+      {/* Mic Sensitivity Meter & Gain Control Slider Strip */}
+      <div style={{ 
+        backgroundColor: '#0f172a', 
+        border: '1px solid #1e293b', 
+        borderRadius: '10px', 
+        padding: '8px 14px', 
+        marginBottom: '10px', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        gap: '16px',
+        flexShrink: 0,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.4)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexGrow: 1 }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: '700', color: '#38bdf8', whiteSpace: 'nowrap' }}>
+            🎚️ Mic Sensitivity Gain: <span style={{ color: '#a78bfa' }}>{micSensitivity}%</span>
+          </span>
+          <input 
+            type="range" 
+            min="0" 
+            max="100" 
+            value={micSensitivity} 
+            onChange={(e) => setMicSensitivity(Number(e.target.value))}
+            style={{ flexGrow: 1, accentColor: '#38bdf8', cursor: 'pointer', height: '6px' }}
+          />
+        </div>
+
+        {/* Real-time Mic Audio Level Visualizer */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '180px' }}>
+          <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: '600' }}>Live Meter:</span>
+          <div style={{ flexGrow: 1, height: '10px', backgroundColor: '#1e293b', borderRadius: '5px', overflow: 'hidden', border: '1px solid #334155' }}>
+            <div style={{ 
+              height: '100%', 
+              width: `${audioLevel}%`, 
+              background: audioLevel > 80 ? 'linear-gradient(90deg, #10b981, #ef4444)' : 'linear-gradient(90deg, #06b6d4, #10b981)',
+              transition: 'width 0.05s ease-out'
+            }} />
+          </div>
+          <span style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: '700', width: '28px', textAlign: 'right' }}>{audioLevel}%</span>
+        </div>
       </div>
 
-      {/* Touch-Friendly Mobile Tab Bar Switcher */}
-      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', backgroundColor: '#0f172a', padding: '4px', borderRadius: '8px', border: '1px solid #1e293b' }}>
-        {[
-          { id: 'all', label: '🖥️ All Panels' },
-          { id: 'input', label: '🎙️ Input & Mic' },
-          { id: 'viseme', label: '👄 3D Studio' },
-          { id: 'output', label: '💬 Output' }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveMobileTab(tab.id)}
-            style={{
-              flex: 1,
-              padding: '8px 10px',
-              backgroundColor: activeMobileTab === tab.id ? '#1e293b' : 'transparent',
-              color: activeMobileTab === tab.id ? '#38bdf8' : '#94a3b8',
-              border: activeMobileTab === tab.id ? '1px solid #334155' : 'none',
-              borderRadius: '6px',
-              fontSize: '0.8rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Adaptive Grid Viewport */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: '16px', alignItems: 'stretch' }}>
+      {/* Main 3-Column Display (Strictly 100vh fit without main page scrollbar) */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: '1fr 1.1fr 1fr', 
+        gap: '12px', 
+        flexGrow: 1, 
+        overflow: 'hidden' 
+      }}>
         
-        {/* SECTION 1: Input & Mic */}
-        {(activeMobileTab === 'all' || activeMobileTab === 'input') && (
-          <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8', borderBottom: '1px solid #1e293b', paddingBottom: '8px', fontWeight: '700' }}>
-              1. Speech Input
-            </h3>
-            
-            <SearchableLanguageDropdown 
-              label="Input Language (Mic)"
-              selectedLang={inputLang}
-              onSelectLang={setInputLang}
-            />
+        {/* PANEL 1: Speech Input & Mic */}
+        <div style={{ 
+          backgroundColor: '#0f172a', 
+          padding: '14px', 
+          borderRadius: '12px', 
+          border: '1px solid #1e293b', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '10px',
+          overflow: 'hidden'
+        }}>
+          <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#38bdf8', borderBottom: '1px solid #1e293b', paddingBottom: '6px', fontWeight: '700' }}>
+            1. Speech Input Panel
+          </h3>
+          
+          <SearchableLanguageDropdown 
+            label="Input Language (Mic)"
+            selectedLang={inputLang}
+            onSelectLang={setInputLang}
+          />
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
-              <span style={{ fontSize: '0.78rem', color: isListening ? '#4ade80' : '#f87171', fontWeight: '500' }}>● {statusMsg}</span>
-              <button onClick={toggleMic} style={{ backgroundColor: isListening ? '#dc2626' : '#16a34a', color: '#fff', border: 'none', padding: '10px 18px', borderRadius: '8px', cursor: 'pointer', fontWeight: '700', fontSize: '0.85rem', minHeight: '44px' }}>
-                {isListening ? 'Stop Mic' : 'Start Mic'}
-              </button>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <span style={{ fontSize: '0.75rem', color: isListening ? '#10b981' : '#f87171', fontWeight: '600' }}>● {statusMsg}</span>
+            <button 
+              onClick={toggleMic} 
+              style={{ 
+                backgroundColor: isListening ? '#ef4444' : '#10b981', 
+                color: '#fff', 
+                border: 'none', 
+                padding: '8px 14px', 
+                borderRadius: '8px', 
+                cursor: 'pointer', 
+                fontWeight: '800', 
+                fontSize: '0.8rem',
+                boxShadow: isListening ? '0 0 12px rgba(239,68,68,0.4)' : '0 0 12px rgba(16,185,129,0.4)'
+              }}
+            >
+              {isListening ? 'Stop Mic' : 'Start Mic'}
+            </button>
+          </div>
 
-            <div style={{ fontSize: '0.75rem', color: '#fbbf24', minHeight: '16px' }}>
-              {selectedInputObj?.note ? <div>• {selectedInputObj.note}</div> : <span style={{ color: '#4ade80' }}>✓ Filter active</span>}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-              <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>Live Speech Transcript</label>
-              <div 
-                ref={transcriptScrollRef}
-                style={{ 
-                  width: '100%', 
-                  height: '260px', 
-                  backgroundColor: '#090d16', 
-                  color: '#f8fafc', 
-                  border: '1px solid #1e293b', 
-                  borderRadius: '8px', 
-                  padding: '12px', 
-                  boxSizing: 'border-box', 
-                  overflowY: 'auto', 
-                  whiteSpace: 'pre-wrap', 
-                  fontSize: '0.88rem',
-                  lineHeight: '1.5'
-                }}
-              >
-                {transcript || 'Speech transcripts append here...'}
-              </div>
+          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
+            <label style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px', fontWeight: '600' }}>Live Speech Log</label>
+            <div 
+              ref={transcriptScrollRef}
+              style={{ 
+                width: '100%', 
+                flexGrow: 1, 
+                backgroundColor: '#070a12', 
+                color: '#f8fafc', 
+                border: '1px solid #1e293b', 
+                borderRadius: '8px', 
+                padding: '10px', 
+                boxSizing: 'border-box', 
+                overflowY: 'auto', 
+                whiteSpace: 'pre-wrap', 
+                fontSize: '0.82rem',
+                lineHeight: '1.4'
+              }}
+            >
+              {transcript || 'Speech transcripts append here in real-time...'}
             </div>
           </div>
-        )}
+        </div>
 
-        {/* SECTION 2: 3D Viseme Viewport */}
-        {(activeMobileTab === 'all' || activeMobileTab === 'viseme') && (
-          <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', borderBottom: '1px solid #1e293b', paddingBottom: '8px' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8', fontWeight: '700' }}>2. 3D Lip-Sync Viseme Studio</h3>
-              <span style={{ fontSize: '0.7rem', backgroundColor: '#1e293b', color: '#38bdf8', padding: '3px 8px', borderRadius: '4px', fontWeight: '600' }}>WebGL</span>
-            </div>
-            <div ref={mountRef} style={{ width: '100%', height: '320px', backgroundColor: '#000', borderRadius: '8px', overflow: 'hidden', flexGrow: 1, margin: '8px 0' }} />
-            <div style={{ fontSize: '0.72rem', color: '#64748b', textAlign: 'center' }}>
-              WebGL Animated Visemes Sync • Powered by Three.js
-            </div>
+        {/* PANEL 2: 3D Viseme Mouth Mesh Studio */}
+        <div style={{ 
+          backgroundColor: '#0f172a', 
+          padding: '14px', 
+          borderRadius: '12px', 
+          border: '1px solid #1e293b', 
+          display: 'flex', 
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px', borderBottom: '1px solid #1e293b', paddingBottom: '6px' }}>
+            <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#38bdf8', fontWeight: '700' }}>2. 3D Lip-Sync Viseme Studio</h3>
+            <span style={{ fontSize: '0.68rem', backgroundColor: '#1e293b', color: '#38bdf8', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>Three.js WebGL</span>
           </div>
-        )}
 
-        {/* SECTION 3: Output & Translation - FIXED Overflow clipping & Height */}
-        {(activeMobileTab === 'all' || activeMobileTab === 'output') && (
-          <div style={{ backgroundColor: '#0f172a', padding: '16px', borderRadius: '12px', border: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8', borderBottom: '1px solid #1e293b', paddingBottom: '8px', fontWeight: '700' }}>
-              3. Translation Output
-            </h3>
+          <div ref={mountRef} style={{ width: '100%', flexGrow: 1, backgroundColor: '#000', borderRadius: '8px', overflow: 'hidden', margin: '4px 0' }} />
 
-            <SearchableLanguageDropdown 
-              label="Target Language (Output)"
-              selectedLang={outputLang}
-              onSelectLang={setOutputLang}
-            />
+          <div style={{ fontSize: '0.7rem', color: '#64748b', textAlign: 'center', paddingTop: '4px' }}>
+            Lip movements sync dynamically during synthesis & mic capture
+          </div>
+        </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090d16', padding: '8px 10px', borderRadius: '6px', border: '1px solid #1e293b' }}>
-                <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Replay Voice</span>
-                <button 
-                  onClick={() => setReplayVoiceEnabled(!replayVoiceEnabled)}
-                  style={{ backgroundColor: replayVoiceEnabled ? '#16a34a' : '#dc2626', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '700' }}
-                >
-                  {replayVoiceEnabled ? 'ON' : 'OFF'}
-                </button>
-              </div>
+        {/* PANEL 3: Output & Controls */}
+        <div style={{ 
+          backgroundColor: '#0f172a', 
+          padding: '14px', 
+          borderRadius: '12px', 
+          border: '1px solid #1e293b', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '10px',
+          overflow: 'hidden'
+        }}>
+          <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#38bdf8', borderBottom: '1px solid #1e293b', paddingBottom: '6px', fontWeight: '700' }}>
+            3. Translation Output Panel
+          </h3>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#090d16', padding: '8px 10px', borderRadius: '6px', border: '1px solid #1e293b' }}>
-                <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Auto Speak</span>
-                <button 
-                  onClick={() => setAutoSpeakOutput(!autoSpeakOutput)}
-                  style={{ backgroundColor: autoSpeakOutput ? '#16a34a' : '#dc2626', color: '#fff', border: 'none', padding: '4px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: '700' }}
-                >
-                  {autoSpeakOutput ? 'ON' : 'OFF'}
-                </button>
-              </div>
-            </div>
+          <SearchableLanguageDropdown 
+            label="Target Language (Output)"
+            selectedLang={outputLang}
+            onSelectLang={setOutputLang}
+          />
 
-            <div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#070a12', padding: '6px 8px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+              <span style={{ fontSize: '0.72rem', color: '#cbd5e1' }}>Replay Voice</span>
               <button 
-                onClick={replayAudio} 
-                disabled={!replayVoiceEnabled}
-                style={{ width: '100%', backgroundColor: replayVoiceEnabled ? '#0284c7' : '#334155', color: '#fff', border: 'none', padding: '10px', borderRadius: '6px', cursor: replayVoiceEnabled ? 'pointer' : 'not-allowed', fontSize: '0.85rem', fontWeight: '700', minHeight: '40px' }}
+                onClick={() => setReplayVoiceEnabled(!replayVoiceEnabled)}
+                style={{ backgroundColor: replayVoiceEnabled ? '#10b981' : '#ef4444', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '700' }}
               >
-                🔊 Replay Audio Output
+                {replayVoiceEnabled ? 'ON' : 'OFF'}
               </button>
             </div>
 
-            <div style={{ fontSize: '0.75rem', color: '#fbbf24', minHeight: '16px' }}>
-              {selectedOutputObj?.note ? <div>• {selectedOutputObj.note}</div> : <span style={{ color: '#4ade80' }}>✓ DB Logging online</span>}
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
-              <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '6px', fontWeight: '600' }}>Translation History</label>
-              <div 
-                ref={translationScrollRef}
-                style={{ 
-                  width: '100%', 
-                  height: '260px', 
-                  backgroundColor: '#090d16', 
-                  color: '#f8fafc', 
-                  border: '1px solid #1e293b', 
-                  borderRadius: '8px', 
-                  padding: '12px', 
-                  boxSizing: 'border-box', 
-                  overflowY: 'auto', 
-                  whiteSpace: 'pre-wrap', 
-                  fontSize: '0.88rem',
-                  lineHeight: '1.5'
-                }}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#070a12', padding: '6px 8px', borderRadius: '6px', border: '1px solid #1e293b' }}>
+              <span style={{ fontSize: '0.72rem', color: '#cbd5e1' }}>Auto Speak</span>
+              <button 
+                onClick={() => setAutoSpeakOutput(!autoSpeakOutput)}
+                style={{ backgroundColor: autoSpeakOutput ? '#10b981' : '#ef4444', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: '700' }}
               >
-                {translation}
-              </div>
+                {autoSpeakOutput ? 'ON' : 'OFF'}
+              </button>
             </div>
           </div>
-        )}
+
+          <button 
+            onClick={replayAudio} 
+            disabled={!replayVoiceEnabled}
+            style={{ width: '100%', backgroundColor: replayVoiceEnabled ? '#0284c7' : '#334155', color: '#fff', border: 'none', padding: '8px', borderRadius: '6px', cursor: replayVoiceEnabled ? 'pointer' : 'not-allowed', fontSize: '0.8rem', fontWeight: '700' }}
+          >
+            🔊 Replay Output Audio
+          </button>
+
+          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, overflow: 'hidden' }}>
+            <label style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '4px', fontWeight: '600' }}>Translation Log</label>
+            <div 
+              ref={translationScrollRef}
+              style={{ 
+                width: '100%', 
+                flexGrow: 1, 
+                backgroundColor: '#070a12', 
+                color: '#f8fafc', 
+                border: '1px solid #1e293b', 
+                borderRadius: '8px', 
+                padding: '10px', 
+                boxSizing: 'border-box', 
+                overflowY: 'auto', 
+                whiteSpace: 'pre-wrap', 
+                fontSize: '0.82rem',
+                lineHeight: '1.4'
+              }}
+            >
+              {translation}
+            </div>
+          </div>
+        </div>
 
       </div>
     </div>
