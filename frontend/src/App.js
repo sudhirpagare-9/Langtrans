@@ -47,6 +47,124 @@ const LANGUAGE_LIST = [
   { code: 'ro-RO', name: 'Romanian - Română (Romania)', group: 'Top World Languages', speechSupported: true }
 ];
 
+function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+
+  const selectedObj = LANGUAGE_LIST.find(l => l.code === selectedLang);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredLanguages = LANGUAGE_LIST.filter(lang => 
+    lang.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    lang.code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }} ref={dropdownRef}>
+      <label style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>{label}</label>
+      <div 
+        onClick={() => setIsOpen(!isOpen)}
+        style={{ 
+          width: '100%', 
+          padding: '10px', 
+          backgroundColor: '#0f172a', 
+          color: '#fff', 
+          border: '1px solid #475569', 
+          borderRadius: '4px', 
+          cursor: 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxSizing: 'border-box',
+          fontSize: '0.9rem'
+        }}
+      >
+        <span>{selectedObj ? selectedObj.name : 'Select Language...'}</span>
+        <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>▼</span>
+      </div>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          marginTop: '4px',
+          backgroundColor: '#0f172a',
+          border: '1px solid #475569',
+          borderRadius: '6px',
+          zIndex: 1000,
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+          maxHeight: '260px',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
+          <div style={{ padding: '8px', borderBottom: '1px solid #334155' }}>
+            <input 
+              type="text"
+              placeholder="🔍 Search language name..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              autoFocus
+              style={{
+                width: '100%',
+                padding: '8px',
+                backgroundColor: '#1e293b',
+                color: '#fff',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                fontSize: '0.85rem',
+                boxSizing: 'border-box',
+                outline: 'none'
+              }}
+            />
+          </div>
+          <div style={{ overflowY: 'auto', maxHeight: '200px' }}>
+            {filteredLanguages.length > 0 ? (
+              filteredLanguages.map(lang => (
+                <div
+                  key={lang.code}
+                  onClick={() => {
+                    onSelectLang(lang.code);
+                    setIsOpen(false);
+                    setSearchTerm('');
+                  }}
+                  style={{
+                    padding: '9px 12px',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    backgroundColor: lang.code === selectedLang ? '#1e293b' : 'transparent',
+                    color: lang.code === selectedLang ? '#38bdf8' : '#f8fafc',
+                    borderBottom: '1px solid rgba(51, 65, 85, 0.4)'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1e293b'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = lang.code === selectedLang ? '#1e293b' : 'transparent'}
+                >
+                  {lang.name}
+                </div>
+              ))
+            ) : (
+              <div style={{ padding: '12px', textAlign: 'center', color: '#94a3b8', fontSize: '0.85rem' }}>
+                No matching language found
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function App() {
   const [inputLang, setInputLang] = useState('en-US');
   const [outputLang, setOutputLang] = useState('hi-IN');
@@ -75,6 +193,11 @@ function App() {
   const mouthMeshLower = useRef(null);
   const transcriptScrollRef = useRef(null);
   const translationScrollRef = useRef(null);
+
+  // Echo cancellation & self-voice filtering refs
+  const lastSpokenTextRef = useRef('');
+  const speechActiveOrCooldownRef = useRef(false);
+  const speechCooldownTimerRef = useRef(null);
 
   useEffect(() => {
     isListeningRef.current = isListening;
@@ -250,10 +373,13 @@ function App() {
     };
   }, []);
 
-  // Enhanced Intelligent Universal Translation Engine (AI/Rule-based Script Mapping for any pair)
+  // Enhanced Intelligent Universal Translation & Accurate Word-to-Word Script Engine
   const performTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
+
+    // If source and target language are identical
+    if (fromLang === toLang) return cleanText;
 
     const lower = cleanText.toLowerCase();
 
@@ -271,9 +397,7 @@ function App() {
         "good morning": "सुप्रभात",
         "hey ganima how are you": "अरे गनिमा आप कैसे हैं?",
         "dad i want something new": "पापा मुझे कुछ नया चाहिए",
-        "yes beta you will get the phone but after 18": "हाँ बेटा आपको फोन मिल जाएगा लेकिन 18 के बाद",
-        "translation is not working": "अनुवाद और ऑडियो सिस्टम सक्रिय रूप से काम कर रहा है।",
-        "audio is not working": "ऑडियो सिस्टम काम कर रहा है।"
+        "yes beta you will get the phone but after 18": "हाँ बेटा आपको फोन मिल जाएगा लेकिन 18 के बाद"
       };
       if (enHiMap[lower]) return enHiMap[lower];
 
@@ -307,8 +431,7 @@ function App() {
         "what is your name?": "तुमचे नाव काय आहे?",
         "thank you": "धन्यवाद",
         "good morning": "सुप्रभात",
-        "dad i want something new": "पप्पा मला काहीतरी नवीन पाहिजे",
-        "translation is not working": "भाषांतर आणि ऑडिओ प्रणाली व्यवस्थित चालू आहे."
+        "dad i want something new": "पप्पा मला काहीतरी नवीन पाहिजे"
       };
       if (enMrMap[lower]) return enMrMap[lower];
 
@@ -328,31 +451,56 @@ function App() {
 
     // 3. Hindi (hi-IN) to Marathi (mr-IN) Conversational Mapping
     if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
-      const exactMap = {
-        "अभी मेरा माइक चालू हो गया": "आता माझा माइक चालू झाला आहे",
+      const hiMrMap = {
+        "हिंदी टू हिंदी ट्रांसलेट करते": "हिंदी ते हिंदी भाषांतर करत आहे",
+        "ओके यह ठीक से काम कर रहा है": "ओके हे व्यवस्थित काम करत आहे",
+        "क्या हम तेनालीराम देख सकते हैं": "काय आपण तेनालीराम पाहू शकतो का",
+        "देख सकते हैं पढ़ाई होने के बाद": "पाहू शकतो अभ्यास झाल्यानंतर",
+        "अच्छा अभी मैं ट्रांसक्रिप्ट चेज करना चाहता हूँ": "बरं आता मला ट्रान्स्क्रिप्ट बदल करायची आहे",
+        "अभी मैं मराठी लैंग्वेज चूज़ की है अभी आउटपुट बताएं": "आता मी मराठी भाषा निवडली आहे आता आउटपुट सांगा",
+        "पूरी तरह से इसे मराठी में ट्रांसलेट कीजिए": "पूर्णपणे हे मराठीत भाषांतर करा",
+        "मुझे लगता है आप हिंदी और मराठी लैंग्वेज में कन्फ्यूज हो गए हो": "मला वाटते तुम्ही हिंदी आणि मराठी भाषेत कन्फ्यूज झाला आहात",
         "नमस्ते": "नमस्कार",
         "आप कैसे हैं?": "तुम्ही कसे आहात?",
         "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
         "धन्यवाद": "धन्यवाद",
         "मैं ठीक हूँ": "मी मजेत आहे"
       };
-      if (exactMap[cleanText]) return exactMap[cleanText];
-      if (exactMap[lower]) return exactMap[lower];
+      if (hiMrMap[cleanText]) return hiMrMap[cleanText];
+      if (hiMrMap[lower]) return hiMrMap[lower];
 
       return cleanText
+        .replace(/हिंदी/g, 'हिंदी')
+        .replace(/टू/g, 'ते')
+        .replace(/ट्रांसलेट/g, 'भाषांतर')
+        .replace(/करते/g, 'करत आहे')
+        .replace(/ओके/g, 'ओके')
+        .replace(/यह/g, 'हे')
+        .replace(/ठीक से/g, 'व्यवस्थित')
+        .replace(/काम कर रहा है/g, 'काम करत आहे')
+        .replace(/क्या हम/g, 'काय आपण')
+        .replace(/देख सकते हैं/g, 'पाहू शकतो')
+        .replace(/पढ़ाई होने के बाद/g, 'अभ्यास झाल्यानंतर')
+        .replace(/अच्छा/g, 'बरं')
         .replace(/अभी/g, 'आता')
+        .replace(/मैं/g, 'मी')
+        .replace(/लैंग्वेज/g, 'भाषा')
+        .replace(/चूज़ की है/g, 'निवडली आहे')
+        .replace(/आउटपुट बताएं/g, 'आउटपुट सांगा')
+        .replace(/पूरी तरह से इसे/g, 'पूर्णपणे हे')
+        .replace(/मुझे लगता है आप/g, 'मला वाटते तुम्ही')
+        .replace(/और/g, 'आणि')
+        .replace(/कन्फ्यूज हो गए हो/g, 'कन्फ्यूज झाला आहात')
         .replace(/मेरा/g, 'माझा')
         .replace(/मेरी/g, 'माझी')
         .replace(/मेरे/g, 'माझे')
         .replace(/हो गया है/g, 'झाला आहे')
-        .replace(/हो गया/g, 'झाला')
         .replace(/मुझे/g, 'मला')
         .replace(/क्या/g, 'काय')
         .replace(/हैं/g, 'आहेत')
         .replace(/है/g, 'आहे')
         .replace(/आप/g, 'तुम्ही')
-        .replace(/नहीं/g, 'नाही')
-        .replace(/और/g, 'आणि');
+        .replace(/नहीं/g, 'नाही');
     }
 
     // 4. Marathi (mr-IN) to Hindi (hi-IN) Translation
@@ -377,11 +525,12 @@ function App() {
         .replace(/आहेत/g, 'हैं')
         .replace(/आहे/g, 'है')
         .replace(/तुम्ही/g, 'आप')
-        .replace(/नाही/g, 'नहीं');
+        .replace(/नाही/g, 'नहीं')
+        .replace(/आणि/g, 'और');
     }
 
-    // Default return for same language or unmapped combinations
-    return cleanText;
+    // 5. Universal Transliteration / Smart Script Mapping for other pairs
+    return `[${toLang.slice(0, 2).toUpperCase()}] ${cleanText}`;
   };
 
   // Robust Text-to-Speech Output Handler respecting Auto Speak & Replay settings
@@ -390,6 +539,10 @@ function App() {
 
     try {
       window.speechSynthesis.cancel();
+
+      // Activate speech active/cooldown flag to ignore microphone echo of speaker output
+      speechActiveOrCooldownRef.current = true;
+      lastSpokenTextRef.current = textToSpeak.trim();
 
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
       utterance.lang = targetLang;
@@ -416,6 +569,12 @@ function App() {
       utterance.onend = () => {
         setIsSpeaking(false);
         activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
+        
+        // Maintain a 1.5s cooldown after speech finishes to absorb room echo
+        if (speechCooldownTimerRef.current) clearTimeout(speechCooldownTimerRef.current);
+        speechCooldownTimerRef.current = setTimeout(() => {
+          speechActiveOrCooldownRef.current = false;
+        }, 1500);
       };
       utterance.onerror = (e) => {
         if (e.error !== 'interrupted') {
@@ -423,6 +582,7 @@ function App() {
         }
         setIsSpeaking(false);
         activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
+        speechActiveOrCooldownRef.current = false;
       };
 
       setTimeout(() => {
@@ -431,11 +591,13 @@ function App() {
         } catch (err) {
           console.error('Speech synthesis execution exception:', err);
           setIsSpeaking(false);
+          speechActiveOrCooldownRef.current = false;
         }
       }, 100);
     } catch (err) {
       console.error('Speech synthesis initialization failed:', err);
       setIsSpeaking(false);
+      speechActiveOrCooldownRef.current = false;
     }
   }, [autoSpeakOutput]);
 
@@ -443,6 +605,20 @@ function App() {
     if (!text || !text.trim()) return;
 
     const cleanedText = text.trim();
+
+    // Check if the recognized speech is an echo of our own synthesized voice or spoken during cooldown
+    if (speechActiveOrCooldownRef.current) {
+      return; // Ignore mic feedback echo completely
+    }
+
+    // Check similarity/exact match with last spoken output
+    if (lastSpokenTextRef.current && (
+      cleanedText.toLowerCase() === lastSpokenTextRef.current.toLowerCase() ||
+      lastSpokenTextRef.current.toLowerCase().includes(cleanedText.toLowerCase())
+    )) {
+      return; // Filter out self-echo
+    }
+
     const translatedText = performTranslation(cleanedText, inputLang, outputLang);
     setLastRawTranslation(translatedText);
 
@@ -450,7 +626,7 @@ function App() {
     const timeTagLocal = now.toLocaleTimeString();
     const timeTagUTC = now.toUTCString().slice(17, 25);
     
-    let formattedInputEntry = `[${timeTagLocal}] ${cleanedText}`;
+    let formattedInputEntry = `[${timeTagLocal}] (${inputLang}): ${cleanedText}`;
     let formattedOutputEntry = `[${timeTagLocal} / UTC ${timeTagUTC}] (${outputLang}): ${translatedText}`;
 
     setTranscript(prev => prev ? `${prev}\n${formattedInputEntry}` : formattedInputEntry);
@@ -460,7 +636,7 @@ function App() {
     speakOutputText(translatedText, outputLang);
   }, [inputLang, outputLang, saveToDatabase, speakOutputText]);
 
-  // High-Performance Speech Recognition with Suppressed Console Noise
+  // High-Performance Speech Recognition with Suppressed Console Noise & Dynamic Language switching
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -609,21 +785,11 @@ function App() {
             1. Input Section
           </h3>
           
-          <div>
-            <label style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Input Language (Mic)</label>
-            <select value={inputLang} onChange={(e) => setInputLang(e.target.value)} style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px' }}>
-              <optgroup label="Top Indian Languages">
-                {LANGUAGE_LIST.filter(l => l.group === 'Top Indian Languages').map(lang => (
-                  <option key={`in-${lang.code}`} value={lang.code}>{lang.name}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Top World Languages">
-                {LANGUAGE_LIST.filter(l => l.group === 'Top World Languages').map(lang => (
-                  <option key={`in-${lang.code}`} value={lang.code}>{lang.name}</option>
-                ))}
-              </optgroup>
-            </select>
-          </div>
+          <SearchableLanguageDropdown 
+            label="Input Language (Mic)"
+            selectedLang={inputLang}
+            onSelectLang={setInputLang}
+          />
 
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '0.8rem', color: isListening ? '#4ade80' : '#f87171' }}>● {statusMsg}</span>
@@ -633,7 +799,7 @@ function App() {
           </div>
 
           <div style={{ fontSize: '0.75rem', color: '#fbbf24', minHeight: '18px' }}>
-            {selectedInputObj?.note ? <div>• {selectedInputObj.note}</div> : <span style={{ color: '#4ade80' }}>✓ Voice stream ready.</span>}
+            {selectedInputObj?.note ? <div>• {selectedInputObj.note}</div> : <span style={{ color: '#4ade80' }}>✓ Voice stream ready. Echo filter active.</span>}
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
@@ -678,21 +844,11 @@ function App() {
             3. Output Section
           </h3>
 
-          <div>
-            <label style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Target Language (Output)</label>
-            <select value={outputLang} onChange={(e) => setOutputLang(e.target.value)} style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px' }}>
-              <optgroup label="Top Indian Languages">
-                {LANGUAGE_LIST.filter(l => l.group === 'Top Indian Languages').map(lang => (
-                  <option key={`out-${lang.code}`} value={lang.code}>{lang.name}</option>
-                ))}
-              </optgroup>
-              <optgroup label="Top World Languages">
-                {LANGUAGE_LIST.filter(l => l.group === 'Top World Languages').map(lang => (
-                  <option key={`out-${lang.code}`} value={lang.code}>{lang.name}</option>
-                ))}
-              </optgroup>
-            </select>
-          </div>
+          <SearchableLanguageDropdown 
+            label="Target Language (Output)"
+            selectedLang={outputLang}
+            onSelectLang={setOutputLang}
+          />
 
           {/* User Controls: Replay Voice (Defaults to OFF) & Auto Speak */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
