@@ -1,9 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
-// Comprehensive list including Top 20 Indian Languages, Top World Languages + Danish, Thai, and Portuguese
 const LANGUAGE_LIST = [
-  // Top Indian Languages
   { code: 'hi-IN', name: 'Hindi - हिन्दी (India)', group: 'Top Indian Languages', speechSupported: true },
   { code: 'mr-IN', name: 'Marathi - मराठी (India)', group: 'Top Indian Languages', speechSupported: true },
   { code: 'bn-IN', name: 'Bengali - বাংলা (India/Bangladesh)', group: 'Top Indian Languages', speechSupported: true },
@@ -25,8 +23,6 @@ const LANGUAGE_LIST = [
   { code: 'sd-IN', name: 'Sindhi - سنڌي (India/Pakistan)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited native browser speech support.' },
   { code: 'doi-IN', name: 'Dogri - डोगरी (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited native browser speech support.' },
   { code: 'sa-IN', name: 'Sanskrit - संस्कृतम् (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Synthesized audio may use regional fallback voice.' },
-
-  // Top World Languages (including Danish, Thai, Portuguese)
   { code: 'en-US', name: 'English (United States)', group: 'Top World Languages', speechSupported: true },
   { code: 'zh-CN', name: 'Mandarin Chinese - 中文 (China)', group: 'Top World Languages', speechSupported: true },
   { code: 'es-ES', name: 'Spanish - Español (Spain/LatAm)', group: 'Top World Languages', speechSupported: true },
@@ -55,7 +51,7 @@ function App() {
   const [inputLang, setInputLang] = useState('en-US');
   const [outputLang, setOutputLang] = useState('hi-IN');
   const [transcript, setTranscript] = useState('');
-  const [translation, setTranslation] = useState('Translated text and database timestamp logs will appear here...');
+  const [translation, setTranslation] = useState('Translated session history will appear here in append mode...');
   const [lastRawTranslation, setLastRawTranslation] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -74,6 +70,8 @@ function App() {
   const voicesRef = useRef([]);
   const mouthMeshUpper = useRef(null);
   const mouthMeshLower = useRef(null);
+  const transcriptScrollRef = useRef(null);
+  const translationScrollRef = useRef(null);
 
   useEffect(() => {
     isListeningRef.current = isListening;
@@ -83,7 +81,19 @@ function App() {
     isSpeakingRef.current = isSpeaking;
   }, [isSpeaking]);
 
-  // Load voices for Speech Synthesis robustly across all browsers
+  // Auto-scroll text areas when content updates
+  useEffect(() => {
+    if (transcriptScrollRef.current) {
+      transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
+    }
+  }, [transcript]);
+
+  useEffect(() => {
+    if (translationScrollRef.current) {
+      translationScrollRef.current.scrollTop = translationScrollRef.current.scrollHeight;
+    }
+  }, [translation]);
+
   useEffect(() => {
     const updateVoices = () => {
       if ('speechSynthesis' in window) {
@@ -98,7 +108,6 @@ function App() {
     }
   }, []);
 
-  // Load database analytics logs on mount
   useEffect(() => {
     try {
       const savedLogs = JSON.parse(localStorage.getItem('langtrans_db_logs') || '[]');
@@ -130,7 +139,6 @@ function App() {
     });
   }, [inputLang, outputLang]);
 
-  // Setup High-Performance Three.js 3D Lips Scene & Viseme Animation Loop
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
@@ -232,14 +240,12 @@ function App() {
     };
   }, []);
 
-  // Enhanced Multi-Directional Translation Engine with Comprehensive Phrase Mapping & Full Sentence Fallbacks
   const performTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
 
     const lower = cleanText.toLowerCase();
 
-    // English to Hindi Translation & Phrase Dictionary
     if (fromLang === 'en-US' && toLang === 'hi-IN') {
       if (lower.includes('translation is not working') || lower.includes('audio is not working')) {
         return 'अनुवाद और ऑडियो सिस्टम काम कर रहा है।';
@@ -257,7 +263,6 @@ function App() {
         return 'धन्यवाद';
       }
 
-      // General fallback replacement for common words
       return cleanText
         .replace(/translation/gi, 'अनुवाद')
         .replace(/audio/gi, 'ऑडियो')
@@ -266,7 +271,6 @@ function App() {
         .replace(/is/gi, 'है');
     }
 
-    // English to Marathi Translation & Phrase Dictionary
     if (fromLang === 'en-US' && toLang === 'mr-IN') {
       if (lower.includes('translation is not working') || lower.includes('audio is not working')) {
         return 'भाषांतर आणि ऑडिओ प्रणाली व्यवस्थित चालू आहे.';
@@ -292,7 +296,6 @@ function App() {
         .replace(/is/gi, 'आहे');
     }
 
-    // Hindi to English Translation
     if (fromLang === 'hi-IN' && toLang === 'en-US') {
       const hiEnMap = {
         "स्पीकर काम नहीं कर रहा है": "The speaker is working fine now.",
@@ -311,7 +314,6 @@ function App() {
         .replace(/धन्यवाद/g, 'Thank you');
     }
 
-    // Marathi to Hindi Translation
     if (fromLang === 'mr-IN' && toLang === 'hi-IN') {
       const mrHiMap = {
         "स्पीकर काम करत नाही आहे.": "स्पीकर अब ठीक से काम कर रहा है।",
@@ -338,7 +340,6 @@ function App() {
         .replace(/मजेत/g, 'ठीक');
     }
 
-    // Hindi to Marathi Translation
     if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
       const hiMrMap = {
         "नमस्ते": "नमस्कार",
@@ -366,12 +367,10 @@ function App() {
     return cleanText;
   };
 
-  // Robust Text-to-Speech Output Handler with Graceful Interruption Handling
   const speakOutputText = useCallback((textToSpeak, targetLang) => {
     if (!speakerEnabled || !('speechSynthesis' in window) || !textToSpeak) return;
 
     try {
-      // Safely cancel any ongoing speech without triggering abrupt error events
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(textToSpeak);
@@ -402,7 +401,6 @@ function App() {
         activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
       };
       utterance.onerror = (e) => {
-        // 'interrupted' is expected when cancelling or restarting speech rapidly; suppress it from acting as a hard error
         if (e.error !== 'interrupted') {
           console.warn('Speech synthesis audio warning:', e);
         }
@@ -427,26 +425,25 @@ function App() {
   const handleTranslationAndSpeech = useCallback((text) => {
     if (!text || !text.trim()) return;
 
-    const translatedText = performTranslation(text, inputLang, outputLang);
+    const cleanedText = text.trim();
+    const translatedText = performTranslation(cleanedText, inputLang, outputLang);
     setLastRawTranslation(translatedText);
+
+    const now = new Date();
+    const timeTagLocal = now.toLocaleTimeString();
+    const timeTagUTC = now.toUTCString().slice(17, 25);
     
-    let displayFormatted = translatedText;
-    if (outputLang === 'mr-IN') {
-      displayFormatted = `मराठी रूपांतरित: ${translatedText}`;
-    } else if (outputLang === 'hi-IN') {
-      displayFormatted = `हिन्दी अनुवाद: ${translatedText}`;
-    } else {
-      displayFormatted = `Translated (${outputLang}): ${translatedText}`;
-    }
+    let formattedInputEntry = `[${timeTagLocal}] ${cleanedText}`;
+    let formattedOutputEntry = `[${timeTagLocal} / UTC ${timeTagUTC}] (${outputLang}): ${translatedText}`;
 
-    setTranslation(displayFormatted);
-    saveToDatabase(text, displayFormatted);
+    // Append mode update for transcript and translation
+    setTranscript(prev => prev ? `${prev}\n${formattedInputEntry}` : formattedInputEntry);
+    setTranslation(prev => prev && !prev.includes('Translated session history') ? `${prev}\n${formattedOutputEntry}` : formattedOutputEntry);
 
-    // Trigger explicit audio synthesis using the clean translated text
+    saveToDatabase(cleanedText, translatedText);
     speakOutputText(translatedText, outputLang);
   }, [inputLang, outputLang, saveToDatabase, speakOutputText]);
 
-  // Robust Speech Recognition Lifecycle with Auto-Restart
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -465,24 +462,15 @@ function App() {
     };
 
     recognition.onresult = (event) => {
-      let interim = '';
       let final = '';
-
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           final += event.results[i][0].transcript;
-        } else {
-          interim += event.results[i][0].transcript;
         }
-      }
-
-      if (interim) {
-        setTranscript(interim);
       }
 
       if (final) {
         const cleanedText = final.trim();
-        setTranscript(cleanedText);
         handleTranslationAndSpeech(cleanedText);
       }
     };
@@ -564,17 +552,9 @@ function App() {
     }
   };
 
-  const manualTranslateAndSync = () => {
-    if (transcript) {
-      handleTranslationAndSpeech(transcript);
-    }
-  };
-
   const replayAudio = () => {
     if (lastRawTranslation) {
       speakOutputText(lastRawTranslation, outputLang);
-    } else if (transcript) {
-      handleTranslationAndSpeech(transcript);
     }
   };
 
@@ -582,124 +562,157 @@ function App() {
   const selectedOutputObj = LANGUAGE_LIST.find(l => l.code === outputLang);
 
   return (
-    <div style={{ fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', backgroundColor: '#0f172a', color: '#f8fafc', minHeight: '100vh', padding: '20px' }}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '15px', marginBottom: '20px' }}>
+    <div style={{ fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', backgroundColor: '#0f172a', color: '#f8fafc', minHeight: '100vh', padding: '20px', boxSizing: 'border-box' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #334155', paddingBottom: '15px', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
         <h1 style={{ fontSize: '1.4rem', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
           🌐 AI Secure Real-Time Translator & 3D Lip-Sync Studio
         </h1>
-        <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem' }}>
+        <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem', flexWrap: 'wrap' }}>
           <span style={{ backgroundColor: '#1e293b', border: '1px solid #475569', padding: '5px 10px', borderRadius: '4px' }}>GDPR / NIST SP 800-53 Compliant</span>
           <span style={{ backgroundColor: '#0284c7', padding: '5px 10px', borderRadius: '4px', fontWeight: 'bold' }}>DB Logs: {dbLogs.length} Saved (Local/UTC)</span>
           <span style={{ backgroundColor: '#15803d', padding: '5px 10px', borderRadius: '4px' }}>Backend: Secure Online</span>
         </div>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        {/* Left Column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-          <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
-            <h3 style={{ marginTop: 0, fontSize: '1rem', color: '#38bdf8' }}>1. Speech Input & Language Configuration</h3>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '5px' }}>
-              <div>
-                <label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Input Language (Mic)</label>
-                <select value={inputLang} onChange={(e) => setInputLang(e.target.value)} style={{ width: '100%', padding: '8px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px', marginTop: '4px' }}>
-                  <optgroup label="Top Indian Languages">
-                    {LANGUAGE_LIST.filter(l => l.group === 'Top Indian Languages').map(lang => (
-                      <option key={`in-${lang.code}`} value={lang.code}>{lang.name}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Top World Languages (incl. Danish, Thai, Portuguese)">
-                    {LANGUAGE_LIST.filter(l => l.group === 'Top World Languages').map(lang => (
-                      <option key={`in-${lang.code}`} value={lang.code}>{lang.name}</option>
-                    ))}
-                  </optgroup>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Target Language (Output)</label>
-                <select value={outputLang} onChange={(e) => setOutputLang(e.target.value)} style={{ width: '100%', padding: '8px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px', marginTop: '4px' }}>
-                  <optgroup label="Top Indian Languages">
-                    {LANGUAGE_LIST.filter(l => l.group === 'Top Indian Languages').map(lang => (
-                      <option key={`out-${lang.code}`} value={lang.code}>{lang.name}</option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Top World Languages (incl. Danish, Thai, Portuguese)">
-                    {LANGUAGE_LIST.filter(l => l.group === 'Top World Languages').map(lang => (
-                      <option key={`out-${lang.code}`} value={lang.code}>{lang.name}</option>
-                    ))}
-                  </optgroup>
-                </select>
-              </div>
-            </div>
-
-            {/* Dynamic Support Status Message Below Fields */}
-            <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginBottom: '15px', minHeight: '18px' }}>
-              {selectedInputObj?.note && <div>• Input Note: {selectedInputObj.note}</div>}
-              {selectedOutputObj?.note && <div>• Output Note: {selectedOutputObj.note}</div>}
-              {!selectedInputObj?.note && !selectedOutputObj?.note && <span style={{ color: '#4ade80' }}>✓ Full speech synthesis and translation support active for selected pair.</span>}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
-              <span style={{ fontSize: '0.85rem', color: isListening ? '#4ade80' : '#f87171' }}>● {statusMsg}</span>
-              <button onClick={toggleMic} style={{ backgroundColor: isListening ? '#dc2626' : '#16a34a', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                {isListening ? 'Stop Mic' : 'Start Mic'}
-              </button>
-            </div>
-
-            <label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Live Transcript / Source Text (Unicode Supported)</label>
-            <textarea 
-              value={transcript} 
-              onChange={(e) => setTranscript(e.target.value)} 
-              placeholder="Live voice transcript appears here automatically..." 
-              style={{ width: '100%', height: '80px', backgroundColor: '#0f172a', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px', padding: '8px', boxSizing: 'border-box', marginTop: '5px', marginBottom: '10px' }}
-            />
-
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button onClick={manualTranslateAndSync} style={{ flex: 1, backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
-                ⚡ Translate & Sync
-              </button>
-            </div>
+      {/* 3-Column Layout: Input Section | 3D Lips Viewport | Output Section */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', alignItems: 'stretch' }}>
+        
+        {/* COLUMN 1: Input Section */}
+        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#38bdf8', borderBottom: '1px solid #334155', paddingBottom: '8px' }}>
+            1. Input Section
+          </h3>
+          
+          <div>
+            <label style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Input Language (Mic)</label>
+            <select value={inputLang} onChange={(e) => setInputLang(e.target.value)} style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px' }}>
+              <optgroup label="Top Indian Languages">
+                {LANGUAGE_LIST.filter(l => l.group === 'Top Indian Languages').map(lang => (
+                  <option key={`in-${lang.code}`} value={lang.code}>{lang.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Top World Languages">
+                {LANGUAGE_LIST.filter(l => l.group === 'Top World Languages').map(lang => (
+                  <option key={`in-${lang.code}`} value={lang.code}>{lang.name}</option>
+                ))}
+              </optgroup>
+            </select>
           </div>
 
-          <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-              <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8' }}>3. Translation Output & Database Feed</h3>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button 
-                  onClick={replayAudio} 
-                  title="Replay Audio Output"
-                  style={{ backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-                >
-                  🔊 Replay Audio
-                </button>
-                <button 
-                  onClick={() => setSpeakerEnabled(!speakerEnabled)} 
-                  title={speakerEnabled ? "Speaker Voice On" : "Speaker Voice Muted"}
-                  style={{ backgroundColor: speakerEnabled ? '#0369a1' : '#475569', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-                >
-                  {speakerEnabled ? '🔊 Speaker On' : '🔇 Muted'}
-                </button>
-              </div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.8rem', color: isListening ? '#4ade80' : '#f87171' }}>● {statusMsg}</span>
+            <button onClick={toggleMic} style={{ backgroundColor: isListening ? '#dc2626' : '#16a34a', color: '#fff', border: 'none', padding: '8px 16px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+              {isListening ? 'Stop Mic' : 'Start Mic'}
+            </button>
+          </div>
+
+          <div style={{ fontSize: '0.75rem', color: '#fbbf24', minHeight: '18px' }}>
+            {selectedInputObj?.note ? <div>• {selectedInputObj.note}</div> : <span style={{ color: '#4ade80' }}>✓ Voice stream ready.</span>}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+            <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '4px' }}>Live Transcript (Append Mode + Scroller)</label>
+            <div 
+              ref={transcriptScrollRef}
+              style={{ 
+                width: '100%', 
+                height: '280px', 
+                backgroundColor: '#0f172a', 
+                color: '#f8fafc', 
+                border: '1px solid #475569', 
+                borderRadius: '6px', 
+                padding: '12px', 
+                boxSizing: 'border-box', 
+                overflowY: 'auto', 
+                whiteSpace: 'pre-wrap', 
+                fontSize: '0.9rem',
+                lineHeight: '1.5'
+              }}
+            >
+              {transcript || 'Microphone session transcripts will append here in real-time...'}
             </div>
-            <div style={{ backgroundColor: '#0f172a', padding: '10px', borderRadius: '4px', border: '1px solid #334155', minHeight: '60px', fontSize: '0.95rem' }}>
+          </div>
+        </div>
+
+        {/* COLUMN 2: 3D Lips Viewport (In Between) */}
+        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid #334155', paddingBottom: '8px' }}>
+            <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#38bdf8' }}>2. 3D Viseme Viewport</h3>
+            <span style={{ fontSize: '0.75rem', backgroundColor: '#0f172a', padding: '3px 8px', borderRadius: '4px', border: '1px solid #475569' }}>WebGL Accelerated</span>
+          </div>
+          <div ref={mountRef} style={{ width: '100%', height: '360px', backgroundColor: '#000', borderRadius: '6px', overflow: 'hidden', flexGrow: 1, margin: '10px 0' }} />
+          <div style={{ fontSize: '0.75rem', color: '#94a3b8', textAlign: 'center' }}>
+            Powered by Google Gemini API & Three.js WebGL Engine • UTC & Local Timestamps Active
+          </div>
+        </div>
+
+        {/* COLUMN 3: Output Section */}
+        <div style={{ backgroundColor: '#1e293b', padding: '20px', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+          <h3 style={{ margin: 0, fontSize: '1.05rem', color: '#38bdf8', borderBottom: '1px solid #334155', paddingBottom: '8px' }}>
+            3. Output Section
+          </h3>
+
+          <div>
+            <label style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'block', marginBottom: '4px' }}>Target Language (Output)</label>
+            <select value={outputLang} onChange={(e) => setOutputLang(e.target.value)} style={{ width: '100%', padding: '10px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px' }}>
+              <optgroup label="Top Indian Languages">
+                {LANGUAGE_LIST.filter(l => l.group === 'Top Indian Languages').map(lang => (
+                  <option key={`out-${lang.code}`} value={lang.code}>{lang.name}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Top World Languages">
+                {LANGUAGE_LIST.filter(l => l.group === 'Top World Languages').map(lang => (
+                  <option key={`out-${lang.code}`} value={lang.code}>{lang.name}</option>
+                ))}
+              </optgroup>
+            </select>
+          </div>
+
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button 
+              onClick={replayAudio} 
+              title="Replay Audio Output"
+              style={{ flex: 1, backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+            >
+              🔊 Replay Audio
+            </button>
+            <button 
+              onClick={() => setSpeakerEnabled(!speakerEnabled)} 
+              title={speakerEnabled ? "Speaker Voice On" : "Speaker Voice Muted"}
+              style={{ backgroundColor: speakerEnabled ? '#0369a1' : '#475569', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
+            >
+              {speakerEnabled ? '🔊 Speaker On' : '🔇 Muted'}
+            </button>
+          </div>
+
+          <div style={{ fontSize: '0.75rem', color: '#fbbf24', minHeight: '18px' }}>
+            {selectedOutputObj?.note ? <div>• {selectedOutputObj.note}</div> : <span style={{ color: '#4ade80' }}>✓ Speech synthesis & DB logging active.</span>}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
+            <label style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '4px' }}>Translation History (Append Mode + Scroller)</label>
+            <div 
+              ref={translationScrollRef}
+              style={{ 
+                width: '100%', 
+                height: '280px', 
+                backgroundColor: '#0f172a', 
+                color: '#f8fafc', 
+                border: '1px solid #475569', 
+                borderRadius: '6px', 
+                padding: '12px', 
+                boxSizing: 'border-box', 
+                overflowY: 'auto', 
+                whiteSpace: 'pre-wrap', 
+                fontSize: '0.9rem',
+                lineHeight: '1.5'
+              }}
+            >
               {translation}
             </div>
           </div>
         </div>
 
-        {/* Right Column: 3D Viewport */}
-        <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8' }}>2. PWD 3D Human Lips & Viseme Viewport</h3>
-            <span style={{ fontSize: '0.75rem', backgroundColor: '#0f172a', padding: '3px 8px', borderRadius: '4px', border: '1px solid #475569' }}>WebGL Accelerated</span>
-          </div>
-          <div ref={mountRef} style={{ width: '100%', height: '380px', backgroundColor: '#000', borderRadius: '6px', overflow: 'hidden', flexGrow: 1 }} />
-          <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '10px', textAlign: 'center' }}>
-            Powered by Google Gemini API & Three.js WebGL Engine • Auto-Saved Unicode Database Logs Active (UTC & Local Timestamps)
-          </div>
-        </div>
       </div>
     </div>
   );
