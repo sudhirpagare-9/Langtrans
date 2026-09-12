@@ -2,44 +2,112 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
 const LANGUAGE_LIST = [
-  { code: 'hi-IN', name: 'Hindi - हिन्दी (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'mr-IN', name: 'Marathi - मराठी (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'bn-IN', name: 'Bengali - বাংলা (India/Bangladesh)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'te-IN', name: 'Telugu - తెలుగు (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'ta-IN', name: 'Tamil - தமிழ் (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'gu-IN', name: 'Gujarati - ગુજરાતી (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'ur-IN', name: 'Urdu - اردو (India/Pakistan)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'kn-IN', name: 'Kannada - ಕನ್ನಡ (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'ml-IN', name: 'Malayalam - മലയാളം (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'pa-IN', name: 'Punjabi - ਪੰਜਾਬੀ (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'or-IN', name: 'Odia - ଓଡ଼ିଆ (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'as-IN', name: 'Assamese - অসমীয়া (India)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'ne-IN', name: 'Nepali - नेपाली (India/Nepal)', group: 'Top Indian Languages', speechSupported: true },
-  { code: 'bho-IN', name: 'Bhojpuri - भोजपुरी (India)', group: 'Top Indian Languages', speechSupported: false },
-  { code: 'mai-IN', name: 'Maithili - मैथिली (India)', group: 'Top Indian Languages', speechSupported: false },
-  { code: 'sat-IN', name: 'Santali - संताली (India)', group: 'Top Indian Languages', speechSupported: false },
-  { code: 'ks-IN', name: 'Kashmiri - कॉशुर (India)', group: 'Top Indian Languages', speechSupported: false },
-  { code: 'kok-IN', name: 'Konkani - कोंकणी (India)', group: 'Top Indian Languages', speechSupported: false },
-  { code: 'sd-IN', name: 'Sindhi - سنڌي (India/Pakistan)', group: 'Top Indian Languages', speechSupported: false },
-  { code: 'doi-IN', name: 'Dogri - डोगरी (India)', group: 'Top Indian Languages', speechSupported: false },
-  { code: 'sa-IN', name: 'Sanskrit - संस्कृतम् (India)', group: 'Top Indian Languages', speechSupported: false },
-  { code: 'en-US', name: 'English (United States)', group: 'Top World Languages', speechSupported: true },
-  { code: 'zh-CN', name: 'Mandarin Chinese - 中文 (China)', group: 'Top World Languages', speechSupported: true },
-  { code: 'es-ES', name: 'Spanish - Español (Spain/LatAm)', group: 'Top World Languages', speechSupported: true },
-  { code: 'fr-FR', name: 'French - Français (France)', group: 'Top World Languages', speechSupported: true },
-  { code: 'ar-SA', name: 'Arabic - العربية (Saudi Arabia)', group: 'Top World Languages', speechSupported: true },
-  { code: 'pt-PT', name: 'Portuguese - Português (Portugal)', group: 'Top World Languages', speechSupported: true },
-  { code: 'da-DK', name: 'Danish - Dansk (Denmark)', group: 'Top World Languages', speechSupported: true },
-  { code: 'th-TH', name: 'Thai - ไทย (Thailand)', group: 'Top World Languages', speechSupported: true },
-  { code: 'ru-RU', name: 'Russian - Русский (Russia)', group: 'Top World Languages', speechSupported: true },
-  { code: 'id-ID', name: 'Indonesian - Bahasa Indonesia', group: 'Top World Languages', speechSupported: true },
-  { code: 'de-DE', name: 'German - Deutsch (Germany)', group: 'Top World Languages', speechSupported: true },
-  { code: 'ja-JP', name: 'Japanese - 日本語 (Japan)', group: 'Top World Languages', speechSupported: true },
-  { code: 'tr-TR', name: 'Turkish - Türkçe (Turkey)', group: 'Top World Languages', speechSupported: true },
-  { code: 'vi-VN', name: 'Vietnamese - Tiếng Việt (Vietnam)', group: 'Top World Languages', speechSupported: true },
-  { code: 'ko-KR', name: 'Korean - 한국어 (South Korea)', group: 'Top World Languages', speechSupported: true },
-  { code: 'it-IT', name: 'Italian - Italiano (Italy)', group: 'Top World Languages', speechSupported: true }
+  { code: 'hi-IN', name: 'Hindi - हिन्दी (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'mr-IN', name: 'Marathi - मराठी (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'te-IN', name: 'Telugu - తెలుగు (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'ta-IN', name: 'Tamil - தமிழ் (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'bn-IN', name: 'Bengali - বাংলা (India/Bangladesh)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'gu-IN', name: 'Gujarati - ગુજરાતી (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'kn-IN', name: 'Kannada - ಕನ್ನಡ (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'ml-IN', name: 'Malayalam - മലയാളം (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'ur-IN', name: 'Urdu - اردو (India/Pakistan)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'pa-IN', name: 'Punjabi - ਪੰਜਾਬੀ (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'or-IN', name: 'Odia - ଓଡ଼ିଆ (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'as-IN', name: 'Assamese - অসমীয়া (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'ne-IN', name: 'Nepali - नेपाली (India/Nepal)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'bho-IN', name: 'Bhojpuri - भोजपुरी (India)', group: 'Top Indian Languages', sttSupported: false, ttsStreamSupported: true },
+  { code: 'mai-IN', name: 'Maithili - मैथिली (India)', group: 'Top Indian Languages', sttSupported: false, ttsStreamSupported: true },
+  { code: 'sat-IN', name: 'Santali - संताली (India)', group: 'Top Indian Languages', sttSupported: false, ttsStreamSupported: false },
+  { code: 'ks-IN', name: 'Kashmiri - कॉशुर (India)', group: 'Top Indian Languages', sttSupported: false, ttsStreamSupported: false },
+  { code: 'kok-IN', name: 'Konkani - कोंकणी (India)', group: 'Top Indian Languages', sttSupported: false, ttsStreamSupported: true },
+  { code: 'sd-IN', name: 'Sindhi - سنڌي (India/Pakistan)', group: 'Top Indian Languages', sttSupported: false, ttsStreamSupported: true },
+  { code: 'doi-IN', name: 'Dogri - डोगरी (India)', group: 'Top Indian Languages', sttSupported: false, ttsStreamSupported: false },
+  { code: 'sa-IN', name: 'Sanskrit - संस्कृतम् (India)', group: 'Top Indian Languages', sttSupported: false, ttsStreamSupported: true },
+  { code: 'en-US', name: 'English (United States)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'zh-CN', name: 'Mandarin Chinese - 中文 (China)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'es-ES', name: 'Spanish - Español (Spain/LatAm)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'fr-FR', name: 'French - Français (France)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'ar-SA', name: 'Arabic - العربية (Saudi Arabia)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'pt-PT', name: 'Portuguese - Português (Portugal)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'da-DK', name: 'Danish - Dansk (Denmark)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'th-TH', name: 'Thai - ไทย (Thailand)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'ru-RU', name: 'Russian - Русский (Russia)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'id-ID', name: 'Indonesian - Bahasa Indonesia', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'de-DE', name: 'German - Deutsch (Germany)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'ja-JP', name: 'Japanese - 日本語 (Japan)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'tr-TR', name: 'Turkish - Türkçe (Turkey)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'vi-VN', name: 'Vietnamese - Tiếng Việt (Vietnam)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'ko-KR', name: 'Korean - 한국어 (South Korea)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true },
+  { code: 'it-IT', name: 'Italian - Italiano (Italy)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true }
 ];
+
+function FeatureStatusBanner({ type, langCode, availableVoices }) {
+  const langObj = LANGUAGE_LIST.find(l => l.code === langCode);
+  const iso = langCode ? langCode.split('-')[0].toLowerCase() : '';
+
+  if (type === 'input') {
+    const isSTTSupported = langObj ? langObj.sttSupported : true;
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '4px 8px',
+        borderRadius: '6px',
+        backgroundColor: isSTTSupported ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+        border: `1px solid ${isSTTSupported ? '#10b981' : '#ef4444'}`,
+        fontSize: '0.72rem',
+        fontWeight: '600',
+        color: isSTTSupported ? '#34d399' : '#f87171',
+        marginBottom: '6px'
+      }}>
+        <span>🎙️ Speech Recognition (STT):</span>
+        <span>{isSTTSupported ? '✓ Live Recognition Ready' : '⚠️ Speech Input Limited'}</span>
+      </div>
+    );
+  } else {
+    const hasNativeVoice = availableVoices.some(v => 
+      v.lang.toLowerCase() === langCode.toLowerCase() || v.lang.toLowerCase().startsWith(iso)
+    );
+    const hasHDStream = langObj ? langObj.ttsStreamSupported : true;
+
+    let statusText = '❌ Audio Unsupported';
+    let statusColor = '#f87171';
+    let bgColor = 'rgba(239, 68, 68, 0.12)';
+    let borderClr = '#ef4444';
+
+    if (hasNativeVoice) {
+      statusText = '⚡ Native Device Voice Active';
+      statusColor = '#34d399';
+      bgColor = 'rgba(16, 185, 129, 0.12)';
+      borderClr = '#10b981';
+    } else if (hasHDStream) {
+      statusText = '🌐 HD Neural Audio Stream Active';
+      statusColor = '#38bdf8';
+      bgColor = 'rgba(56, 189, 248, 0.12)';
+      borderClr = '#0284c7';
+    }
+
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '4px 8px',
+        borderRadius: '6px',
+        backgroundColor: bgColor,
+        border: `1px solid ${borderClr}`,
+        fontSize: '0.72rem',
+        fontWeight: '600',
+        color: statusColor,
+        marginBottom: '6px'
+      }}>
+        <span>🔊 Voice Synthesis (TTS):</span>
+        <span>{statusText}</span>
+      </div>
+    );
+  }
+}
 
 function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -65,7 +133,7 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
 
   return (
     <div style={{ position: 'relative', width: '100%' }} ref={dropdownRef}>
-      <label style={{ fontSize: '0.78rem', color: '#38bdf8', display: 'block', marginBottom: '5px', fontWeight: '700', letterSpacing: '0.5px' }}>{label}</label>
+      <label style={{ fontSize: '0.78rem', color: '#38bdf8', display: 'block', marginBottom: '4px', fontWeight: '700', letterSpacing: '0.5px' }}>{label}</label>
       <div 
         onClick={() => setIsOpen(!isOpen)}
         style={{ 
@@ -165,8 +233,9 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
 
 function App() {
   const [inputLang, setInputLang] = useState('hi-IN');
-  const [outputLang, setOutputLang] = useState('mr-IN');
+  const [outputLang, setOutputLang] = useState('te-IN');
   const [transcript, setTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
   const [translation, setTranslation] = useState('Translated session history will appear here...');
   const [lastRawTranslation, setLastRawTranslation] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -182,7 +251,8 @@ function App() {
   const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(true);
 
   const [dbLogs, setDbLogs] = useState([]);
-  const [statusMsg, setStatusMsg] = useState('Ready. High-Performance Speech & Viseme engine active.');
+  const [statusMsg, setStatusMsg] = useState('Ready. Ultra-low latency voice engine active.');
+  const [availableVoices, setAvailableVoices] = useState([]);
 
   const mountRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -191,7 +261,6 @@ function App() {
   const isSpeakingRef = useRef(false);
   const currentAudioRef = useRef(null);
   const restartTimeoutRef = useRef(null);
-  const voicesRef = useRef([]);
   const mouthMeshUpper = useRef(null);
   const mouthMeshLower = useRef(null);
   const transcriptScrollRef = useRef(null);
@@ -216,7 +285,7 @@ function App() {
     if (transcriptScrollRef.current) {
       transcriptScrollRef.current.scrollTop = transcriptScrollRef.current.scrollHeight;
     }
-  }, [transcript]);
+  }, [transcript, interimTranscript]);
 
   useEffect(() => {
     if (translationScrollRef.current) {
@@ -294,7 +363,8 @@ function App() {
   useEffect(() => {
     const updateVoices = () => {
       if ('speechSynthesis' in window) {
-        voicesRef.current = window.speechSynthesis.getVoices();
+        const v = window.speechSynthesis.getVoices();
+        setAvailableVoices(v);
       }
     };
     updateVoices();
@@ -337,6 +407,7 @@ function App() {
 
   const handleClearSession = () => {
     setTranscript('');
+    setInterimTranscript('');
     setTranslation('Translated session history will appear here...');
     setLastRawTranslation('');
     setStatusMsg('Session reset.');
@@ -464,7 +535,7 @@ function App() {
     };
   }, []);
 
-  // Neural Translation Engine Pipeline
+  // Ultra-Fast Neural Translation Pipeline
   const performTranslation = useCallback(async (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
@@ -503,7 +574,7 @@ function App() {
       }
     }
 
-    // Tier 2: Free Neural GTX Engine
+    // Tier 2: Low-Latency High Performance GTX Engine
     try {
       const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceIso}&tl=${targetIso}&dt=t&q=${encodeURIComponent(cleanText)}`;
       const res = await fetch(gtxUrl);
@@ -518,7 +589,7 @@ function App() {
       console.warn('GTX translation fallback:', e);
     }
 
-    // Tier 3: MyMemory Open AI Engine
+    // Tier 3: MyMemory Open AI Engine Fallback
     try {
       const mmUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${sourceIso}|${targetIso}`;
       const res = await fetch(mmUrl);
@@ -535,7 +606,7 @@ function App() {
     return cleanText;
   }, [geminiApiKey]);
 
-  // Online HD Neural Audio Stream Fallback Engine (Guarantees authentic voice for Marathi / all languages)
+  // Online HD Neural Audio Stream Fallback Engine (Guarantees Voice Output for Telugu, Marathi & all Regional Languages)
   const playOnlineTTSStream = useCallback((text, langCode) => {
     return new Promise((resolve) => {
       try {
@@ -544,7 +615,7 @@ function App() {
           currentAudioRef.current = null;
         }
 
-        const iso = langCode.split('-')[0];
+        const iso = langCode.split('-')[0].toLowerCase();
         const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${iso}&client=tw-ob`;
         const audio = new Audio(ttsUrl);
         currentAudioRef.current = audio;
@@ -576,38 +647,30 @@ function App() {
     });
   }, []);
 
-  // Dual-Tier Hybrid Speech Synthesis (Native Web Speech + HD Stream Backup)
+  // Multi-Tier Speech Synthesis (Native Web Speech + HD Audio Stream Guarantee)
   const speakOutputText = useCallback(async (textToSpeak, targetLang) => {
     if (!textToSpeak || !textToSpeak.trim()) return;
     const cleanText = textToSpeak.trim();
     lastSpokenTextRef.current = cleanText;
 
-    // Standard Fallback via Online HD Audio Stream if SpeechSynthesis is unavailable
-    if (!('speechSynthesis' in window)) {
-      await playOnlineTTSStream(cleanText, targetLang);
-      return;
-    }
+    const targetIso = targetLang.split('-')[0].toLowerCase();
+    const voices = availableVoices.length > 0 ? availableVoices : (('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : []);
 
-    try {
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.resume();
+    let matchedVoice = voices.find(v => 
+      v.lang.toLowerCase() === targetLang.toLowerCase() || 
+      v.lang.toLowerCase().startsWith(targetIso)
+    );
 
-      const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
-      const targetIso = targetLang.split('-')[0].toLowerCase();
+    // If native OS browser voice exists, use SpeechSynthesis API
+    if (matchedVoice && 'speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.resume();
 
-      // Look for exact locale match or language match (e.g., mr-IN or mr)
-      let matchedVoice = voices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase() || v.lang.toLowerCase().startsWith(targetIso));
-
-      // Devanagari script compatibility fallback for Marathi/Hindi
-      if (!matchedVoice && (targetIso === 'mr' || targetIso === 'hi' || targetIso === 'bho' || targetIso === 'ne' || targetIso === 'sa')) {
-        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
-      }
-
-      if (matchedVoice) {
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = matchedVoice.lang;
         utterance.voice = matchedVoice;
-        utterance.rate = 0.92;
+        utterance.rate = 0.95;
 
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => setIsSpeaking(false);
@@ -617,15 +680,15 @@ function App() {
         };
 
         window.speechSynthesis.speak(utterance);
-      } else {
-        // If no compatible client OS voice exists, use high-definition online voice stream
-        await playOnlineTTSStream(cleanText, targetLang);
+        return;
+      } catch (err) {
+        console.warn('Native WebSpeech exception, playing neural stream audio:', err);
       }
-    } catch (err) {
-      console.warn('Native speech synthesis exception, playing streaming audio:', err);
-      await playOnlineTTSStream(cleanText, targetLang);
     }
-  }, [playOnlineTTSStream]);
+
+    // High-Definition Neural Stream Fallback (Guarantees Telugu, Marathi, Bengali, Odia, Gujarati Audio)
+    await playOnlineTTSStream(cleanText, targetLang);
+  }, [availableVoices, playOnlineTTSStream]);
 
   const handleTranslationAndSpeech = useCallback(async (text) => {
     if (!text || !text.trim()) return;
@@ -651,10 +714,11 @@ function App() {
     }
   }, [inputLang, outputLang, autoSpeakOutput, performTranslation, saveToDatabase, speakOutputText]);
 
+  // Real-Time Web Speech Recognition Setup with Live Interim Typing Stream
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      setStatusMsg('Speech Recognition API not supported.');
+      setStatusMsg('Speech Recognition API not supported in this browser.');
       return;
     }
 
@@ -665,17 +729,25 @@ function App() {
 
     recognition.onstart = () => {
       setIsListening(true);
-      setStatusMsg('🎙️ Mic active & listening...');
+      setStatusMsg('🎙️ Mic active & listening live...');
     };
 
     recognition.onresult = (event) => {
+      let interim = '';
       let final = '';
+
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           final += event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
         }
       }
+
+      setInterimTranscript(interim);
+
       if (final) {
+        setInterimTranscript('');
         handleTranslationAndSpeech(final.trim());
       }
     };
@@ -692,7 +764,7 @@ function App() {
           if (!userStoppedRef.current && isListeningRef.current && recognitionRef.current) {
             try { recognitionRef.current.start(); } catch (e) {}
           }
-        }, 300);
+        }, 200);
       } else {
         setIsListening(false);
         setStatusMsg('Microphone stopped.');
@@ -730,7 +802,7 @@ function App() {
       if (recognitionRef.current) {
         try { recognitionRef.current.start(); } catch (e) {}
       }
-      setStatusMsg('🎙️ Mic active & listening...');
+      setStatusMsg('🎙️ Mic active & listening live...');
     }
   };
 
@@ -781,7 +853,7 @@ function App() {
             <h1 style={{ fontSize: '1.15rem', fontWeight: '800', margin: 0, background: 'linear-gradient(90deg, #38bdf8, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Vibrant AI Studio Real-Time Viseme Studio
             </h1>
-            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>GDPR & NIST Compliant • Full 100vh Fit Viewport</span>
+            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>GDPR & NIST Compliant • Live Multi-Lingual Neural Voice & Viseme Engine</span>
           </div>
         </div>
 
@@ -879,12 +951,15 @@ function App() {
           border: '1px solid #1e293b', 
           display: 'flex', 
           flexDirection: 'column', 
-          gap: '10px',
+          gap: '8px',
           overflow: 'hidden'
         }}>
           <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#38bdf8', borderBottom: '1px solid #1e293b', paddingBottom: '6px', fontWeight: '700' }}>
             1. Speech Input Panel
           </h3>
+
+          {/* Dynamic Language Support Feature Banner */}
+          <FeatureStatusBanner type="input" langCode={inputLang} availableVoices={availableVoices} />
           
           <SearchableLanguageDropdown 
             label="Input Language (Mic)"
@@ -932,6 +1007,11 @@ function App() {
               }}
             >
               {transcript || 'Speech transcripts append here in real-time...'}
+              {interimTranscript && (
+                <span style={{ color: '#38bdf8', fontStyle: 'italic', display: 'block', marginTop: '4px' }}>
+                  💬 Listening: {interimTranscript}...
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -966,12 +1046,15 @@ function App() {
           border: '1px solid #1e293b', 
           display: 'flex', 
           flexDirection: 'column', 
-          gap: '10px',
+          gap: '8px',
           overflow: 'hidden'
         }}>
           <h3 style={{ margin: 0, fontSize: '0.9rem', color: '#38bdf8', borderBottom: '1px solid #1e293b', paddingBottom: '6px', fontWeight: '700' }}>
             3. Translation Output Panel
           </h3>
+
+          {/* Dynamic Language Voice Feature Banner */}
+          <FeatureStatusBanner type="output" langCode={outputLang} availableVoices={availableVoices} />
 
           <SearchableLanguageDropdown 
             label="Target Language (Output)"
