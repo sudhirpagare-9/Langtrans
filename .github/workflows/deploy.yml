@@ -11,7 +11,7 @@ permissions:
 
 concurrency:
   group: "pages"
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -31,13 +31,13 @@ jobs:
           npm install
           npm run build
 
-      - name: Setup Pages
+      - name: Setup Pages configuration
         uses: actions/configure-pages@v4
 
-      - name: Upload Artifact
+      - name: Upload build artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './frontend/dist'
+          path: "./build"
 
   deploy:
     environment:
