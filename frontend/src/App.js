@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
 function App() {
@@ -21,7 +21,7 @@ function App() {
     setDbLogs(savedLogs);
   }, []);
 
-  const saveToDatabase = (inputText, translatedText) => {
+  const saveToDatabase = useCallback((inputText, translatedText) => {
     const now = new Date();
     const newLog = {
       id: Date.now(),
@@ -32,10 +32,12 @@ function App() {
       timestampLocal: now.toLocaleString(),
       timestampUTC: now.toUTCString()
     };
-    const updatedLogs = [newLog, ...dbLogs];
-    setDbLogs(updatedLogs);
-    localStorage.setItem('langtrans_db_logs', JSON.stringify(updatedLogs));
-  };
+    setDbLogs(prevLogs => {
+      const updatedLogs = [newLog, ...prevLogs];
+      localStorage.setItem('langtrans_db_logs', JSON.stringify(updatedLogs));
+      return updatedLogs;
+    });
+  }, [inputLang, outputLang]);
 
   // Setup Three.js Realistic 3D Lips Scene
   useEffect(() => {
@@ -61,10 +63,6 @@ function App() {
     dirLight1.position.set(2, 4, 5);
     scene.add(dirLight1);
 
-    const pointLight = new THREE.PointLight(0xffaabb, 3, 10);
-    pointLight.position.set(0, -1, 3);
-    scene.add(pointLight);
-
     // Realistic Lip Material (Glossy Fleshy Pink)
     const lipMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xd97c88,
@@ -79,7 +77,7 @@ function App() {
     // Create Anatomical 3D Lips (Upper & Lower with Cupid's Bow curve)
     const upperShape = new THREE.Shape();
     upperShape.moveTo(-1.6, 0);
-    upperShape.quadraticCurveTo(-0.8, 0.8, 0, 0.2); // Cupid's bow center
+    upperShape.quadraticCurveTo(-0.8, 0.8, 0, 0.2);
     upperShape.quadraticCurveTo(0.8, 0.8, 1.6, 0);
     upperShape.quadraticCurveTo(0, -0.4, -1.6, 0);
 
@@ -112,7 +110,6 @@ function App() {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Subtle breathing / idle motion
       if (upperLip && lowerLip) {
         const speakFactor = isListening ? Math.sin(elapsedTime * 15) * 0.15 : Math.sin(elapsedTime * 2) * 0.03;
         upperLip.position.y = 0.3 + speakFactor;
@@ -139,6 +136,27 @@ function App() {
       }
     };
   }, [isListening]);
+
+  const handleTranslationAndSpeech = useCallback((text) => {
+    let translated = `[Translated to ${outputLang}]: ${text}`;
+    if (outputLang === 'mr-IN') {
+      translated = `मराठी रूपांतरित: ${text}`;
+    } else if (outputLang === 'hi-IN') {
+      translated = `हिन्दी अनुवाद: ${text}`;
+    } else if (outputLang === 'en-US') {
+      translated = `Translated: ${text}`;
+    }
+
+    setTranslation(translated);
+    saveToDatabase(text, translated);
+
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(translated);
+      utterance.lang = outputLang;
+      window.speechSynthesis.speak(utterance);
+    }
+  }, [outputLang, saveToDatabase]);
 
   // Speech Recognition & Auto-Start on Load
   useEffect(() => {
@@ -181,7 +199,6 @@ function App() {
     };
 
     recognition.onend = () => {
-      // Keep persistent if user didn't explicitly stop
       if (isListening) {
         try {
           recognition.start();
@@ -193,7 +210,6 @@ function App() {
 
     recognitionRef.current = recognition;
 
-    // Auto-start on load as requested
     try {
       recognition.start();
     } catch (e) {
@@ -205,30 +221,7 @@ function App() {
         recognitionRef.current.stop();
       }
     };
-  }, [inputLang, outputLang]);
-
-  const handleTranslationAndSpeech = (text) => {
-    // Simulated intelligent translation mapping for Marathi/Hindi/English
-    let translated = `[Translated to ${outputLang}]: ${text}`;
-    if (outputLang === 'mr-IN') {
-      translated = `मराठी रूपांतरित: ${text}`;
-    } else if (outputLang === 'hi-IN') {
-      translated = `हिन्दी अनुवाद: ${text}`;
-    } else if (outputLang === 'en-US') {
-      translated = `Translated: ${text}`;
-    }
-
-    setTranslation(translated);
-    saveToDatabase(text, translated);
-
-    // Speak out translated text
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(translated);
-      utterance.lang = outputLang;
-      window.speechSynthesis.speak(utterance);
-    }
-  };
+  }, [inputLang, handleTranslationAndSpeech, isListening]);
 
   const toggleMic = () => {
     if (isListening) {
@@ -260,7 +253,6 @@ function App() {
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-        {/* Left Column: Controls & Transcripts */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
             <h3 style={{ marginTop: 0, fontSize: '1rem', color: '#38bdf8' }}>1. Speech Input & Language Configuration</h3>
@@ -308,7 +300,6 @@ function App() {
           </div>
         </div>
 
-        {/* Right Column: 3D Realistic Lips Viewport */}
         <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8' }}>2. PWD 3D Human Lips & Viseme Viewport</h3>
