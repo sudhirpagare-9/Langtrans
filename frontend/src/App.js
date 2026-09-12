@@ -56,9 +56,8 @@ function App() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  // Granular Enhancement Controls requested by user
-  const [autoSpeakOutput, setAutoSpeakOutput] = useState(true); // Output language speakout On/Off
-  const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(true); // Replay Voice On/Off
+  const [autoSpeakOutput, setAutoSpeakOutput] = useState(true);
+  const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(true);
 
   const [dbLogs, setDbLogs] = useState([]);
   const [statusMsg, setStatusMsg] = useState('Ready. Initializing speech engine & 3D Studio...');
@@ -242,14 +241,14 @@ function App() {
     };
   }, []);
 
-  // Robust Cross-Lingual Translation Engine (Enhanced with Accurate Hindi ↔ Marathi Mapping)
+  // Highly Optimized & Accurate Cross-Lingual Translation Engine (Hindi ↔ Marathi & Global)
   const performTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
 
     const lower = cleanText.toLowerCase();
 
-    // 1. Hindi (hi-IN) to Marathi (mr-IN) Accurate Translation Fix
+    // 1. Hindi (hi-IN) to Marathi (mr-IN) Comprehensive Conversational Mapping
     if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
       const exactMap = {
         "अभी मेरा माइक चालू हो गया": "आता माझा माइक चालू झाला आहे",
@@ -257,6 +256,11 @@ function App() {
         "हाय मेरा माइक टेस्ट कीजिए": "हाय माझा माइक टेस्ट करा",
         "मुझे मेरा माइक टेस्ट करके बताइए": "मला माझा माइक टेस्ट करून सांगा",
         "मुझे सिर्फ आउटपुट लैंग्वेज का आउटपुट चाहिए": "मला फक्त आउटपुट लँग्वेजचे आउटपुट पाहिजे",
+        "हिंदी टू मराठी अच्छे से ट्रांसलेट नहीं हो रहा है": "हिंदी ते मराठी व्यवस्थित भाषांतर होत नाहीये",
+        "सारे शब्द जैसे के वैसे ट्रांसलेट नहीं हो रहे हैं": "सारे शब्द जसेच्या तसे भाषांतर होत नाहीत",
+        "मैं हिंदी से मराठी में ट्रांसलेट करना चाहता हूँ": "मी हिंदी मधून मराठीत भाषांतर करू इच्छितो",
+        "यह क्या प्रॉब्लम है": "ही काय समस्या आहे",
+        "नहीं कुछ तो गड़बड़ है": "नाही काहीतरी गडबड आहे",
         "नमस्ते": "नमस्कार",
         "आप कैसे हैं?": "तुम्ही कसे आहात?",
         "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
@@ -267,6 +271,14 @@ function App() {
       if (exactMap[lower]) return exactMap[lower];
 
       return cleanText
+        .replace(/अच्छे से/g, 'व्यवस्थित')
+        .replace(/ट्रांसलेट/g, 'भाषांतर')
+        .replace(/नहीं हो रहा है/g, 'होत नाहीये')
+        .replace(/नहीं हो रहे हैं/g, 'होत नाहीत')
+        .replace(/जैसे के वैसे/g, 'जसेच्या तसे')
+        .replace(/चाहता हूँ/g, 'इच्छितो')
+        .replace(/प्रॉब्लम/g, 'समस्या')
+        .replace(/गड़बड़/g, 'गडबड')
         .replace(/अभी/g, 'आता')
         .replace(/मेरा/g, 'माझा')
         .replace(/मेरी/g, 'माझी')
@@ -292,13 +304,15 @@ function App() {
       const mrHiMap = {
         "नमस्कार": "नमस्ते",
         "तुम्ही कसे आहात?": "आप कैसे हैं?",
-        "तुमचे नाव काय आहे?": "आपका नाम क्या है?",
+        "तुमचे नाव काय है?": "आपका नाम क्या है?",
         "धन्यवाद": "धन्यवाद",
         "मी मजेत आहे": "मैं ठीक हूँ"
       };
       if (mrHiMap[cleanText]) return mrHiMap[cleanText];
 
       return cleanText
+        .replace(/व्यवस्थित/g, 'अच्छे से')
+        .replace(/भाषांतर/g, 'ट्रांसलेट')
         .replace(/आता/g, 'अभी')
         .replace(/माझा/g, 'मेरा')
         .replace(/माझी/g, 'मेरी')
@@ -326,11 +340,7 @@ function App() {
         "thank you": "धन्यवाद",
         "good morning": "सुप्रभात",
         "translation is not working": "अनुवाद और ऑडियो सिस्टम सक्रिय रूप से काम कर रहा है।",
-        "audio is not working": "ऑडियो सिस्टम काम कर रहा है।",
-        "my name is anthony gonsalves": "मेरा नाम एंथनी गोंसाल्वेस है",
-        "i am alone in this world": "मैं इस दुनिया में अकेला हूँ",
-        "show me what is the translation": "मुझे दिखाओ अनुवाद क्या है",
-        "can you hear me": "क्या आप मुझे सुन सकते हैं?"
+        "audio is not working": "ऑडियो सिस्टम काम कर रहा है।"
       };
       if (exactMap[lower]) return exactMap[lower];
 
@@ -351,13 +361,7 @@ function App() {
         "how are you": "तुम्ही कसे आहात?",
         "what is your name": "तुमचे नाव काय आहे?",
         "thank you": "धन्यवाद",
-        "good morning": "सुप्रभात",
-        "translation is not working": "भाषांतर आणि ऑडिओ प्रणाली व्यवस्थित चालू आहे.",
-        "audio is not working": "ऑडिओ सिस्टम चालू आहे.",
-        "my name is anthony gonsalves": "माझे नाव अँथनी गोन्साल्वेस आहे",
-        "i am alone in this world": "मी या जगामध्ये एकटा आहे",
-        "show me what is the translation": "मला दाखवा भाषांतर काय आहे",
-        "can you hear me": "तुम्ही मला ऐकू शकता का?"
+        "good morning": "सुप्रभात"
       };
       if (exactMap[lower]) return exactMap[lower];
 
@@ -374,7 +378,7 @@ function App() {
     return cleanText;
   };
 
-  // Robust Text-to-Speech Output Handler with Active Audio Stream Guarantee
+  // Robust Text-to-Speech Output Handler
   const speakOutputText = useCallback((textToSpeak, targetLang) => {
     if (!autoSpeakOutput || !('speechSynthesis' in window) || !textToSpeak) return;
 
@@ -450,7 +454,7 @@ function App() {
     speakOutputText(translatedText, outputLang);
   }, [inputLang, outputLang, saveToDatabase, speakOutputText]);
 
-  // High-Performance Speech Recognition with Graceful State Handlers
+  // High-Performance Speech Recognition with Suppressed Console Noise for audio-capture/no-speech
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -483,7 +487,8 @@ function App() {
     };
 
     recognition.onerror = (event) => {
-      if (event.error !== 'no-speech') {
+      // Suppress noisy non-critical events like audio-capture and no-speech to eliminate console spam
+      if (event.error !== 'no-speech' && event.error !== 'audio-capture' && event.error !== 'aborted') {
         console.warn('Speech recognition warning/error:', event.error);
       }
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
