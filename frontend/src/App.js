@@ -174,10 +174,10 @@ function App() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
-  // Enhancement / Settings: Gemini API Key & Dynamic Translation Toggle
+  // Settings: Gemini API Key & Constant Translation Mode
   const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('langtrans_gemini_key') || '');
   const [showSettings, setShowSettings] = useState(false);
-  const [translationMode, setTranslationMode] = useState('hybrid'); // 'hybrid' (Gemini + Fallback) or 'offline'
+  const translationMode = 'hybrid';
 
   // Controls: Replay Voice defaults to OFF as requested
   const [autoSpeakOutput, setAutoSpeakOutput] = useState(true);
@@ -277,7 +277,7 @@ function App() {
     setStatusMsg('Session cleared. Ready for new input.');
   };
 
-  // Export Session Logs Handler (Enhancement)
+  // Export Session Logs Handler
   const handleExportLogs = () => {
     const exportData = {
       exportTimestamp: new Date().toISOString(),
@@ -527,13 +527,12 @@ function App() {
     return `[${toLang.slice(0, 2).toUpperCase()}] ${cleanText}`;
   };
 
-  // Enhanced Universal Translation with Optional Gemini API Live Integration & Offline Fallback
-  const performTranslation = async (text, fromLang, toLang) => {
+  // Wrapped in useCallback to satisfy exhaustive-deps and prevent lint errors
+  const performTranslation = useCallback(async (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
     if (fromLang === toLang) return cleanText;
 
-    // If Gemini API Key is configured and mode is hybrid, call Gemini API
     if (geminiApiKey && translationMode === 'hybrid') {
       try {
         const targetLangObj = LANGUAGE_LIST.find(l => l.code === toLang);
@@ -563,9 +562,8 @@ function App() {
       }
     }
 
-    // Fallback to robust offline dictionary engine
     return performFallbackTranslation(cleanText, fromLang, toLang);
-  };
+  }, [geminiApiKey]);
 
   // Robust Text-to-Speech Output Handler respecting Auto Speak & Replay settings
   const speakOutputText = useCallback((textToSpeak, targetLang) => {
@@ -664,7 +662,7 @@ function App() {
 
     saveToDatabase(cleanedText, translatedText);
     speakOutputText(translatedText, outputLang);
-  }, [inputLang, outputLang, geminiApiKey, translationMode, saveToDatabase, speakOutputText]);
+  }, [inputLang, outputLang, performTranslation, saveToDatabase, speakOutputText]);
 
   // High-Performance Speech Recognition with Suppressed Console Noise & Dynamic Language switching
   useEffect(() => {
