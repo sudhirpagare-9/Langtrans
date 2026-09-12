@@ -10,16 +10,18 @@ function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakerEnabled, setSpeakerEnabled] = useState(true);
   const [dbLogs, setDbLogs] = useState([]);
-  const [statusMsg, setStatusMsg] = useState('Ready. Initializing live microphone & 3D Studio...');
+  const [statusMsg, setStatusMsg] = useState('Ready. Initializing high-performance speech engine & 3D Studio...');
 
   const mountRef = useRef(null);
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
+  const userStoppedRef = useRef(false);
   const isSpeakingRef = useRef(false);
+  const utteranceRef = useRef(null);
   const mouthMeshUpper = useRef(null);
   const mouthMeshLower = useRef(null);
 
-  // Keep refs synchronized with state
+  // Synchronize state with refs for zero-latency event handling
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
@@ -28,10 +30,14 @@ function App() {
     isSpeakingRef.current = isSpeaking;
   }, [isSpeaking]);
 
-  // Load database logs on mount
+  // Load database analytics logs on mount
   useEffect(() => {
-    const savedLogs = JSON.parse(localStorage.getItem('langtrans_db_logs') || '[]');
-    setDbLogs(savedLogs);
+    try {
+      const savedLogs = JSON.parse(localStorage.getItem('langtrans_db_logs') || '[]');
+      setDbLogs(savedLogs);
+    } catch (e) {
+      console.error('Failed to load database logs', e);
+    }
   }, []);
 
   const saveToDatabase = useCallback((inputText, translatedText) => {
@@ -47,12 +53,16 @@ function App() {
     };
     setDbLogs(prevLogs => {
       const updatedLogs = [newLog, ...prevLogs];
-      localStorage.setItem('langtrans_db_logs', JSON.stringify(updatedLogs));
+      try {
+        localStorage.setItem('langtrans_db_logs', JSON.stringify(updatedLogs));
+      } catch (e) {
+        console.error('LocalStorage write error', e);
+      }
       return updatedLogs;
     });
   }, [inputLang, outputLang]);
 
-  // Setup Three.js Realistic 3D Lips Scene with Viseme Sync
+  // Setup High-Performance Three.js 3D Lips Scene & Viseme Animation Loop
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
@@ -63,12 +73,12 @@ function App() {
     const camera = new THREE.PerspectiveCamera(45, currentMount.clientWidth / currentMount.clientHeight, 0.1, 1000);
     camera.position.set(0, 0, 5.5);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
     renderer.setSize(currentMount.clientWidth, currentMount.clientHeight);
     renderer.shadowMap.enabled = true;
     currentMount.appendChild(renderer.domElement);
 
-    // Lighting for Glossy Fleshy Lip Appearance
+    // Studio Lighting
     const ambientLight = new THREE.AmbientLight(0xfff0f5, 1.2);
     scene.add(ambientLight);
 
@@ -76,18 +86,18 @@ function App() {
     dirLight1.position.set(2, 4, 5);
     scene.add(dirLight1);
 
-    // Realistic Glossy Lip Material
+    // Glossy Fleshy Lip Material
     const lipMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xd97c88,
-      roughness: 0.25,
+      roughness: 0.22,
       metalness: 0.05,
-      clearcoat: 0.8,
+      clearcoat: 0.85,
       clearcoatRoughness: 0.1,
-      transmission: 0.1,
-      reflectivity: 0.9
+      transmission: 0.08,
+      reflectivity: 0.95
     });
 
-    // Anatomical 3D Lips with Cupid's Bow Curve
+    // Anatomical 3D Lips Geometry with Cupid's Bow Curve
     const upperShape = new THREE.Shape();
     upperShape.moveTo(-1.6, 0);
     upperShape.quadraticCurveTo(-0.8, 0.8, 0, 0.2);
@@ -99,7 +109,7 @@ function App() {
     lowerShape.quadraticCurveTo(0, -0.9, 1.5, -0.1);
     lowerShape.quadraticCurveTo(0, -0.2, -1.5, -0.1);
 
-    const extrudeSettings = { depth: 0.6, bevelEnabled: true, bevelSegments: 5, steps: 2, bevelSize: 0.2, bevelThickness: 0.2 };
+    const extrudeSettings = { depth: 0.6, bevelEnabled: true, bevelSegments: 6, steps: 2, bevelSize: 0.2, bevelThickness: 0.2 };
     
     const upperGeo = new THREE.ExtrudeGeometry(upperShape, extrudeSettings);
     const lowerGeo = new THREE.ExtrudeGeometry(lowerShape, extrudeSettings);
@@ -126,17 +136,15 @@ function App() {
       if (upperLip && lowerLip) {
         let speakFactor = 0;
         if (isSpeakingRef.current) {
-          // Dynamic lip movement synchronized with speech output voice
-          speakFactor = Math.sin(elapsedTime * 30) * 0.24 + Math.cos(elapsedTime * 20) * 0.12;
+          // High-frequency responsive viseme modulation synchronized with speech output
+          speakFactor = Math.sin(elapsedTime * 35) * 0.28 + Math.cos(elapsedTime * 22) * 0.14;
         } else if (isListeningRef.current) {
-          // Subtle listening idle movement
-          speakFactor = Math.sin(elapsedTime * 8) * 0.05;
+          speakFactor = Math.sin(elapsedTime * 8) * 0.04;
         } else {
-          // Rest position
           speakFactor = Math.sin(elapsedTime * 2) * 0.02;
         }
-        upperLip.position.y = 0.3 + (speakFactor * 0.6);
-        lowerLip.position.y = -0.3 - (speakFactor * 0.8);
+        upperLip.position.y = 0.3 + (speakFactor * 0.65);
+        lowerLip.position.y = -0.3 - (speakFactor * 0.85);
       }
 
       renderer.render(scene, camera);
@@ -161,6 +169,8 @@ function App() {
   }, []);
 
   const handleTranslationAndSpeech = useCallback((text) => {
+    if (!text || !text.trim()) return;
+
     let translated = `[Translated to ${outputLang}]: ${text}`;
     if (outputLang === 'mr-IN') {
       translated = `मराठी रूपांतरित: ${text}`;
@@ -174,19 +184,23 @@ function App() {
     saveToDatabase(text, translated);
 
     if (speakerEnabled && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+      window.speechSynthesis.cancel(); // Clear pending speech queue to prevent freezing
+
       const utterance = new SpeechSynthesisUtterance(translated);
       utterance.lang = outputLang;
-      
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
+
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
       utterance.onerror = () => setIsSpeaking(false);
 
+      utteranceRef.current = utterance; // Prevent garbage collection of utterance object
       window.speechSynthesis.speak(utterance);
     }
   }, [outputLang, speakerEnabled, saveToDatabase]);
 
-  // Speech Recognition & Auto-Start on Load
+  // Robust Speech Recognition Lifecycle with Debounced Finalization
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -207,6 +221,7 @@ function App() {
     recognition.onresult = (event) => {
       let interim = '';
       let final = '';
+
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           final += event.results[i][0].transcript;
@@ -215,23 +230,27 @@ function App() {
         }
       }
 
-      const currentText = final || interim;
-      if (currentText) {
-        setTranscript(currentText);
-        handleTranslationAndSpeech(currentText);
+      if (interim) {
+        setTranscript(interim);
+      }
+
+      if (final) {
+        const cleanedText = final.trim();
+        setTranscript(cleanedText);
+        handleTranslationAndSpeech(cleanedText);
       }
     };
 
     recognition.onerror = (event) => {
-      console.warn('Speech recognition error', event.error);
+      console.warn('Speech recognition warning/error:', event.error);
     };
 
     recognition.onend = () => {
-      if (isListeningRef.current) {
+      if (!userStoppedRef.current && isListeningRef.current) {
         try {
           recognition.start();
         } catch (e) {
-          console.log(e);
+          console.log('Safe restart suppressed:', e);
         }
       } else {
         setIsListening(false);
@@ -242,21 +261,32 @@ function App() {
     recognitionRef.current = recognition;
 
     // Auto-start on load
+    userStoppedRef.current = false;
+    isListeningRef.current = true;
     try {
       recognition.start();
     } catch (e) {
       console.log('Auto-start blocked by browser policy, click Start Mic.');
+      setIsListening(false);
+      isListeningRef.current = false;
+      setStatusMsg('Click Start Mic to begin live session.');
     }
 
     return () => {
+      userStoppedRef.current = true;
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          // ignore cleanup errors
+        }
       }
     };
   }, [inputLang, handleTranslationAndSpeech]);
 
   const toggleMic = () => {
     if (isListening) {
+      userStoppedRef.current = true;
       setIsListening(false);
       isListeningRef.current = false;
       if (recognitionRef.current) {
@@ -266,8 +296,9 @@ function App() {
           console.log(e);
         }
       }
-      setStatusMsg('Microphone stopped.');
+      setStatusMsg('Microphone manually stopped.');
     } else {
+      userStoppedRef.current = false;
       setIsListening(true);
       isListeningRef.current = true;
       if (recognitionRef.current) {
