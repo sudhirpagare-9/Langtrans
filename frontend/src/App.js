@@ -41,8 +41,8 @@ const LANGUAGE_LIST = [
   { code: 'it-IT', name: 'Italian - Italiano (Italy)', group: 'Top World Languages', sttSupported: true, ttsStreamSupported: true }
 ];
 
-// Helper to select native system voice matching gender and language
 const getGenderFilteredVoice = (voices, langCode, gender) => {
+  if (!voices || voices.length === 0) return null;
   const targetIso = langCode.split('-')[0].toLowerCase();
   const langMatchVoices = voices.filter(v => 
     v.lang.toLowerCase() === langCode.toLowerCase() || 
@@ -252,7 +252,7 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
 
 export default function App() {
   const [inputLang, setInputLang] = useState('hi-IN');
-  const [outputLang, setOutputLang] = useState('mr-IN');
+  const [outputLang, setOutputLang] = useState('en-US');
   const [inputGender, setInputGender] = useState('female');
   const [outputGender, setOutputGender] = useState('female');
 
@@ -276,7 +276,6 @@ export default function App() {
   const [statusMsg, setStatusMsg] = useState('Ready. Real-time neural voice engine active.');
   const [availableVoices, setAvailableVoices] = useState([]);
 
-  // React Refs for Mic & Speech Engine Recovery
   const mountRef = useRef(null);
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
@@ -389,22 +388,24 @@ export default function App() {
     };
   }, [isListening, micSensitivity]);
 
-  // Voices auto loader
+  // Dynamic voices loader
   useEffect(() => {
     const updateVoices = () => {
       if ('speechSynthesis' in window) {
         const v = window.speechSynthesis.getVoices();
-        setAvailableVoices(v);
+        if (v && v.length > 0) {
+          setAvailableVoices(v);
+        }
       }
     };
     updateVoices();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = updateVoices;
-      setTimeout(updateVoices, 300);
+      setTimeout(updateVoices, 400);
     }
   }, []);
 
-  // Load database logs
+  // Load local database logs
   useEffect(() => {
     try {
       const savedLogs = JSON.parse(localStorage.getItem('langtrans_db_logs') || '[]');
@@ -427,8 +428,8 @@ export default function App() {
       outputLang: currentOutLang,
       inputGender: inputGenderRef.current,
       outputGender: outputGenderRef.current,
-      timestampLocal: now.toLocaleString(),
-      timestampUTC: now.toUTCString()
+      timestampLocal: now.toLocaleTimeString(),
+      timestampUTC: now.toUTCString().slice(17, 25)
     };
 
     setDbLogs(prevLogs => {
@@ -485,7 +486,7 @@ export default function App() {
     URL.revokeObjectURL(url);
   };
 
-  // 3D Lip-Sync Canvas
+  // 3D Lip Viseme Canvas
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
@@ -589,16 +590,17 @@ export default function App() {
     };
   }, []);
 
-  // Neural Translation Engine
+  // Multi-Tier Robust Neural Translation Engine (CORS-Proxy & Fallback Protected)
   const performTranslation = useCallback(async (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
     if (fromLang === toLang) return cleanText;
 
-    const sourceIso = fromLang.split('-')[0];
-    const targetIso = toLang.split('-')[0];
+    const sourceIso = fromLang.split('-')[0].toLowerCase();
+    const targetIso = toLang.split('-')[0].toLowerCase();
     const currentKey = geminiApiKeyRef.current;
 
+    // Tier 1: Gemini API (If user provided custom API key)
     if (currentKey) {
       try {
         const targetLangObj = LANGUAGE_LIST.find(l => l.code === toLang);
@@ -624,10 +626,42 @@ export default function App() {
           if (translated) return translated;
         }
       } catch (err) {
-        console.warn('Gemini fallback:', err);
+        console.warn('Gemini API translation fallback:', err);
       }
     }
 
+    // Tier 2: MyMemory Free Translation API (CORS-friendly for browser deployments like GitHub Pages)
+    try {
+      const myMemoryUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${sourceIso}|${targetIso}`;
+      const res = await fetch(myMemoryUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.responseData && data.responseData.translatedText) {
+          const translated = data.responseData.translatedText.trim();
+          if (translated && !translated.startsWith('MYMEMORY WARNING')) {
+            return translated;
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('MyMemory fallback error:', e);
+    }
+
+    // Tier 3: Lingva Neural API Fallback
+    try {
+      const lingvaUrl = `https://lingva.ml/api/v1/${sourceIso}/${targetIso}/${encodeURIComponent(cleanText)}`;
+      const res = await fetch(lingvaUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.translation) {
+          return data.translation.trim();
+        }
+      }
+    } catch (e) {
+      console.warn('Lingva fallback error:', e);
+    }
+
+    // Tier 4: Direct Google Translate Endpoint
     try {
       const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceIso}&tl=${targetIso}&dt=t&q=${encodeURIComponent(cleanText)}`;
       const res = await fetch(gtxUrl);
@@ -639,13 +673,13 @@ export default function App() {
         }
       }
     } catch (e) {
-      console.warn('GTX translation fallback:', e);
+      console.warn('GTX translation error:', e);
     }
 
     return cleanText;
   }, []);
 
-  // Online TTS Stream Engine
+  // Online Audio Audio Stream Engine
   const playOnlineTTSStream = useCallback((text, langCode, gender) => {
     return new Promise((resolve) => {
       try {
@@ -659,7 +693,6 @@ export default function App() {
         const audio = new Audio(ttsUrl);
         currentAudioRef.current = audio;
 
-        // Apply pitch adjustment for gender tone
         audio.playbackRate = gender === 'male' ? 0.95 : 1.05;
 
         audio.onplay = () => {
@@ -689,19 +722,28 @@ export default function App() {
     });
   }, []);
 
-  // Multi-Tier Gender-Aware Speech Synthesis
+  // Speech Synthesis Engine with Dynamic System Voice Querying
   const speakOutputText = useCallback(async (textToSpeak, targetLang, gender = outputGenderRef.current) => {
     if (!textToSpeak || !textToSpeak.trim()) return;
     const cleanText = textToSpeak.trim();
     lastSpokenTextRef.current = cleanText;
 
-    const voices = availableVoices.length > 0 ? availableVoices : (('speechSynthesis' in window) ? window.speechSynthesis.getVoices() : []);
+    let voices = [];
+    if ('speechSynthesis' in window) {
+      try {
+        window.speechSynthesis.resume();
+        voices = window.speechSynthesis.getVoices();
+      } catch (e) {}
+    }
+    if (!voices || voices.length === 0) {
+      voices = availableVoices;
+    }
+
     const matchedVoice = getGenderFilteredVoice(voices, targetLang, gender);
 
     if ('speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
-        window.speechSynthesis.resume();
 
         const utterance = new SpeechSynthesisUtterance(cleanText);
         utterance.lang = targetLang;
@@ -710,18 +752,18 @@ export default function App() {
           utterance.voice = matchedVoice;
         }
 
-        // Configure gender-specific pitch & rate tone dynamically
         if (gender === 'male') {
           utterance.pitch = 0.85;
           utterance.rate = 0.95;
         } else {
-          utterance.pitch = 1.18;
-          utterance.rate = 1.02;
+          utterance.pitch = 1.15;
+          utterance.rate = 1.0;
         }
 
         utterance.onstart = () => setIsSpeaking(true);
         utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = async () => {
+        utterance.onerror = async (err) => {
+          console.warn('SpeechSynthesis utterance error:', err);
           setIsSpeaking(false);
           await playOnlineTTSStream(cleanText, targetLang, gender);
         };
@@ -729,7 +771,7 @@ export default function App() {
         window.speechSynthesis.speak(utterance);
         return;
       } catch (err) {
-        console.warn('SpeechSynthesis error, falling back to audio stream:', err);
+        console.warn('SpeechSynthesis exception:', err);
       }
     }
 
@@ -1036,7 +1078,6 @@ export default function App() {
             onSelectLang={setInputLang}
           />
 
-          {/* Input Voice Gender Selector */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#070a12', padding: '6px 10px', borderRadius: '8px', border: '1px solid #1e293b' }}>
             <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: '600' }}>🎙️ Speaker Gender Tone:</span>
             <div style={{ display: 'flex', gap: '6px' }}>
@@ -1122,7 +1163,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* PANEL 2: 3D Lip Viseme Mesh */}
+        {/* PANEL 2: 3D Lip-Sync Viseme Studio */}
         <div style={{ 
           backgroundColor: '#0f172a', 
           padding: '14px', 
@@ -1144,7 +1185,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* PANEL 3: Translation & Output Voice Controls */}
+        {/* PANEL 3: Translation Output Panel */}
         <div style={{ 
           backgroundColor: '#0f172a', 
           padding: '14px', 
@@ -1167,7 +1208,6 @@ export default function App() {
             onSelectLang={setOutputLang}
           />
 
-          {/* Output Voice Gender Selector */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#070a12', padding: '6px 10px', borderRadius: '8px', border: '1px solid #1e293b' }}>
             <span style={{ fontSize: '0.75rem', color: '#cbd5e1', fontWeight: '600' }}>🔊 Output Voice Gender:</span>
             <div style={{ display: 'flex', gap: '6px' }}>
