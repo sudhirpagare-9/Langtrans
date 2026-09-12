@@ -29,7 +29,6 @@ const LANGUAGE_LIST = [
   { code: 'fr-FR', name: 'French - Français (France)', group: 'Top World Languages', speechSupported: true },
   { code: 'ar-SA', name: 'Arabic - العربية (Saudi Arabia)', group: 'Top World Languages', speechSupported: true },
   { code: 'pt-PT', name: 'Portuguese - Português (Portugal)', group: 'Top World Languages', speechSupported: true },
-  { code: 'pt-BR', name: 'Portuguese - Português (Brazil)', group: 'Top World Languages', speechSupported: true },
   { code: 'da-DK', name: 'Danish - Dansk (Denmark)', group: 'Top World Languages', speechSupported: true },
   { code: 'th-TH', name: 'Thai - ไทย (Thailand)', group: 'Top World Languages', speechSupported: true },
   { code: 'ru-RU', name: 'Russian - Русский (Russia)', group: 'Top World Languages', speechSupported: true },
@@ -39,12 +38,7 @@ const LANGUAGE_LIST = [
   { code: 'tr-TR', name: 'Turkish - Türkçe (Turkey)', group: 'Top World Languages', speechSupported: true },
   { code: 'vi-VN', name: 'Vietnamese - Tiếng Việt (Vietnam)', group: 'Top World Languages', speechSupported: true },
   { code: 'ko-KR', name: 'Korean - 한국어 (South Korea)', group: 'Top World Languages', speechSupported: true },
-  { code: 'it-IT', name: 'Italian - Italiano (Italy)', group: 'Top World Languages', speechSupported: true },
-  { code: 'fa-IR', name: 'Persian - فارسی (Iran)', group: 'Top World Languages', speechSupported: true },
-  { code: 'pl-PL', name: 'Polish - Język polski (Poland)', group: 'Top World Languages', speechSupported: true },
-  { code: 'uk-UA', name: 'Ukrainian - Українська (Ukraine)', group: 'Top World Languages', speechSupported: true },
-  { code: 'nl-NL', name: 'Dutch - Nederlands (Netherlands)', group: 'Top World Languages', speechSupported: true },
-  { code: 'ro-RO', name: 'Romanian - Română (Romania)', group: 'Top World Languages', speechSupported: true }
+  { code: 'it-IT', name: 'Italian - Italiano (Italy)', group: 'Top World Languages', speechSupported: true }
 ];
 
 function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
@@ -170,8 +164,8 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
 }
 
 function App() {
-  const [inputLang, setInputLang] = useState('en-US');
-  const [outputLang, setOutputLang] = useState('hi-IN');
+  const [inputLang, setInputLang] = useState('hi-IN');
+  const [outputLang, setOutputLang] = useState('mr-IN');
   const [transcript, setTranscript] = useState('');
   const [translation, setTranslation] = useState('Translated session history will appear here...');
   const [lastRawTranslation, setLastRawTranslation] = useState('');
@@ -189,7 +183,7 @@ function App() {
   const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(true);
 
   const [dbLogs, setDbLogs] = useState([]);
-  const [statusMsg, setStatusMsg] = useState('Ready. Speech engine & 3D viseme online.');
+  const [statusMsg, setStatusMsg] = useState('Ready. High-Performance Neural Speech engine online.');
 
   const mountRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -232,7 +226,7 @@ function App() {
     }
   }, [translation]);
 
-  // Audio Context & Mic Analyzer Initialization
+  // Mic Level Meter and Sensitivity Controller
   useEffect(() => {
     const initAudioMeter = async () => {
       try {
@@ -260,7 +254,6 @@ function App() {
               sum += dataArray[i];
             }
             const average = sum / dataArray.length;
-            // Apply sensitivity scaling factor (0.1 to 2.5x)
             const sensitivityMultiplier = (micSensitivity / 50);
             const rawPct = Math.min(100, Math.round((average / 128) * 100 * sensitivityMultiplier));
             setAudioLevel(rawPct);
@@ -282,7 +275,7 @@ function App() {
       if (micStreamRef.current) {
         micStreamRef.current.getTracks().forEach(track => track.stop());
       }
-      if (audioCtxRef.current) {
+      if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
         audioCtxRef.current.close();
       }
       setAudioLevel(0);
@@ -472,55 +465,16 @@ function App() {
     };
   }, []);
 
-  const performFallbackTranslation = (text, fromLang, toLang) => {
-    const cleanText = text.trim();
-    if (!cleanText) return '';
-    if (fromLang === toLang) return cleanText;
-
-    const lower = cleanText.toLowerCase();
-
-    if (fromLang === 'en-US' && toLang === 'hi-IN') {
-      const enHiMap = {
-        "hello": "नमस्ते",
-        "hi": "नमस्ते",
-        "how are you": "आप कैसे हैं?",
-        "what is your name": "आपका नाम क्या है?",
-        "thank you": "धन्यवाद"
-      };
-      if (enHiMap[lower]) return enHiMap[lower];
-
-      return cleanText
-        .replace(/\bhello\b/gi, 'नमस्ते')
-        .replace(/\bhi\b/gi, 'नमस्ते')
-        .replace(/\bhow are you\b/gi, 'आप कैसे हैं')
-        .replace(/\bthank you\b/gi, 'धन्यवाद');
-    }
-
-    if (fromLang === 'en-US' && toLang === 'mr-IN') {
-      const enMrMap = {
-        "hello": "नमस्कार",
-        "hi": "नमस्कार",
-        "how are you": "तुम्ही कसे आहात?",
-        "what is your name": "तुमचे नाव काय आहे?",
-        "thank you": "धन्यवाद"
-      };
-      if (enMrMap[lower]) return enMrMap[lower];
-
-      return cleanText
-        .replace(/\bhello\b/gi, 'नमस्कार')
-        .replace(/\bhi\b/gi, 'नमस्कार')
-        .replace(/\bhow are you\b/gi, 'तुम्ही कसे आहात')
-        .replace(/\bthank you\b/gi, 'धन्यवाद');
-    }
-
-    return `[${toLang.slice(0, 2).toUpperCase()}] ${cleanText}`;
-  };
-
+  // Multi-Tier Free AI Neural Translation Engine (No Mock Data / No [MR] Bug)
   const performTranslation = useCallback(async (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
     if (fromLang === toLang) return cleanText;
 
+    const sourceIso = fromLang.split('-')[0];
+    const targetIso = toLang.split('-')[0];
+
+    // Tier 1: Gemini API (If User API Key Present)
     if (geminiApiKey) {
       try {
         const targetLangObj = LANGUAGE_LIST.find(l => l.code === toLang);
@@ -534,7 +488,7 @@ function App() {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `Translate accurately from ${sourceLangName} to ${targetLangName}. Return ONLY the translation output without quotes or commentary.\n\nText: "${cleanText}"`
+                text: `Translate accurately from ${sourceLangName} to ${targetLangName}. Return ONLY the final clean translation text without quotes or preamble.\n\nText: "${cleanText}"`
               }]
             }]
           })
@@ -546,11 +500,40 @@ function App() {
           if (translated) return translated;
         }
       } catch (err) {
-        console.warn('Gemini fallback to dictionary:', err);
+        console.warn('Gemini API fetch fallback:', err);
       }
     }
 
-    return performFallbackTranslation(cleanText, fromLang, toLang);
+    // Tier 2: Free Public Neural Translate Engine (No Key Required, High Accuracy)
+    try {
+      const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceIso}&tl=${targetIso}&dt=t&q=${encodeURIComponent(cleanText)}`;
+      const res = await fetch(gtxUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data[0]) {
+          const translated = data[0].map(item => item[0]).join('');
+          if (translated) return translated;
+        }
+      }
+    } catch (e) {
+      console.warn('Neural GTX engine fallback:', e);
+    }
+
+    // Tier 3: MyMemory AI Open API (No Key Required)
+    try {
+      const mmUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${sourceIso}|${targetIso}`;
+      const res = await fetch(mmUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.responseData && data.responseData.translatedText) {
+          return data.responseData.translatedText;
+        }
+      }
+    } catch (e) {
+      console.warn('MyMemory engine fallback:', e);
+    }
+
+    return cleanText;
   }, [geminiApiKey]);
 
   const speakOutputText = useCallback((textToSpeak, targetLang) => {
@@ -831,7 +814,7 @@ function App() {
         </div>
       </div>
 
-      {/* Main 3-Column Display (Strictly 100vh fit without main page scrollbar) */}
+      {/* Main 3-Column Display Layout */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: '1fr 1.1fr 1fr', 
