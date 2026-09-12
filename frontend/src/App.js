@@ -254,6 +254,7 @@ function App() {
   const [statusMsg, setStatusMsg] = useState('Ready. Ultra-low latency voice engine active.');
   const [availableVoices, setAvailableVoices] = useState([]);
 
+  // React Refs for Mic Stability & Audio Engine Optimization
   const mountRef = useRef(null);
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
@@ -266,6 +267,11 @@ function App() {
   const transcriptScrollRef = useRef(null);
   const translationScrollRef = useRef(null);
 
+  const inputLangRef = useRef(inputLang);
+  const outputLangRef = useRef(outputLang);
+  const autoSpeakOutputRef = useRef(autoSpeakOutput);
+  const geminiApiKeyRef = useRef(geminiApiKey);
+
   const audioCtxRef = useRef(null);
   const analyserRef = useRef(null);
   const micStreamRef = useRef(null);
@@ -273,13 +279,12 @@ function App() {
 
   const lastSpokenTextRef = useRef('');
 
-  useEffect(() => {
-    isListeningRef.current = isListening;
-  }, [isListening]);
-
-  useEffect(() => {
-    isSpeakingRef.current = isSpeaking;
-  }, [isSpeaking]);
+  useEffect(() => { inputLangRef.current = inputLang; }, [inputLang]);
+  useEffect(() => { outputLangRef.current = outputLang; }, [outputLang]);
+  useEffect(() => { autoSpeakOutputRef.current = autoSpeakOutput; }, [autoSpeakOutput]);
+  useEffect(() => { geminiApiKeyRef.current = geminiApiKey; }, [geminiApiKey]);
+  useEffect(() => { isListeningRef.current = isListening; }, [isListening]);
+  useEffect(() => { isSpeakingRef.current = isSpeaking; }, [isSpeaking]);
 
   useEffect(() => {
     if (transcriptScrollRef.current) {
@@ -374,6 +379,7 @@ function App() {
     }
   }, []);
 
+  // Load JSON & Unicode Logs from Browser Local Storage
   useEffect(() => {
     try {
       const savedLogs = JSON.parse(localStorage.getItem('langtrans_db_logs') || '[]');
@@ -383,27 +389,39 @@ function App() {
     }
   }, []);
 
+  // Automated Non-Interactive Unicode Autosave Routine
   const saveToDatabase = useCallback((inputText, translatedText) => {
     const now = new Date();
+    const currentInLang = inputLangRef.current;
+    const currentOutLang = outputLangRef.current;
+
     const newLog = {
       id: Date.now(),
       input: inputText,
       output: translatedText,
-      inputLang,
-      outputLang,
+      inputLang: currentInLang,
+      outputLang: currentOutLang,
       timestampLocal: now.toLocaleString(),
       timestampUTC: now.toUTCString()
     };
+
     setDbLogs(prevLogs => {
       const updatedLogs = [newLog, ...prevLogs];
       try {
         localStorage.setItem('langtrans_db_logs', JSON.stringify(updatedLogs));
+        
+        // Automated Zero-Interaction Unicode Text Buffer Autosaving
+        const unicodeTextBuffer = updatedLogs.map(log => 
+          `[${log.timestampLocal}] (${log.inputLang}): ${log.input}\n[${log.timestampLocal} / UTC ${log.timestampUTC}] (${log.outputLang}): ${log.output}\n---`
+        ).join('\n');
+        
+        localStorage.setItem('langtrans_unicode_transcript_txt', unicodeTextBuffer);
       } catch (e) {
         console.error('LocalStorage write error', e);
       }
       return updatedLogs;
     });
-  }, [inputLang, outputLang]);
+  }, []);
 
   const handleClearSession = () => {
     setTranscript('');
@@ -425,6 +443,20 @@ function App() {
     const link = document.createElement('a');
     link.href = url;
     link.download = `translation_session_${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportUnicodeTxt = () => {
+    const rawText = localStorage.getItem('langtrans_unicode_transcript_txt') || transcript;
+    // Prepend UTF-8 Byte Order Mark (BOM) for complete Unicode text compatibility
+    const unicodeBlob = new Blob(['\uFEFF' + rawText], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(unicodeBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `unicode_transcript_${Date.now()}.txt`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -543,16 +575,17 @@ function App() {
 
     const sourceIso = fromLang.split('-')[0];
     const targetIso = toLang.split('-')[0];
+    const currentKey = geminiApiKeyRef.current;
 
     // Tier 1: Gemini API Engine (If API Key provided)
-    if (geminiApiKey) {
+    if (currentKey) {
       try {
         const targetLangObj = LANGUAGE_LIST.find(l => l.code === toLang);
         const targetLangName = targetLangObj ? targetLangObj.name : toLang;
         const sourceLangObj = LANGUAGE_LIST.find(l => l.code === fromLang);
         const sourceLangName = sourceLangObj ? sourceLangObj.name : fromLang;
 
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${currentKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -604,9 +637,9 @@ function App() {
     }
 
     return cleanText;
-  }, [geminiApiKey]);
+  }, []);
 
-  // Online HD Neural Audio Stream Fallback Engine (Guarantees Voice Output for Telugu, Marathi & all Regional Languages)
+  // Online HD Neural Audio Stream Fallback Engine
   const playOnlineTTSStream = useCallback((text, langCode) => {
     return new Promise((resolve) => {
       try {
@@ -647,7 +680,7 @@ function App() {
     });
   }, []);
 
-  // Multi-Tier Speech Synthesis (Native Web Speech + HD Audio Stream Guarantee)
+  // Multi-Tier Speech Synthesis
   const speakOutputText = useCallback(async (textToSpeak, targetLang) => {
     if (!textToSpeak || !textToSpeak.trim()) return;
     const cleanText = textToSpeak.trim();
@@ -661,7 +694,6 @@ function App() {
       v.lang.toLowerCase().startsWith(targetIso)
     );
 
-    // If native OS browser voice exists, use SpeechSynthesis API
     if (matchedVoice && 'speechSynthesis' in window) {
       try {
         window.speechSynthesis.cancel();
@@ -686,33 +718,34 @@ function App() {
       }
     }
 
-    // High-Definition Neural Stream Fallback (Guarantees Telugu, Marathi, Bengali, Odia, Gujarati Audio)
     await playOnlineTTSStream(cleanText, targetLang);
   }, [availableVoices, playOnlineTTSStream]);
 
   const handleTranslationAndSpeech = useCallback(async (text) => {
     if (!text || !text.trim()) return;
     const cleanedText = text.trim();
+    const currentInLang = inputLangRef.current;
+    const currentOutLang = outputLangRef.current;
 
-    const translatedText = await performTranslation(cleanedText, inputLang, outputLang);
+    const translatedText = await performTranslation(cleanedText, currentInLang, currentOutLang);
     setLastRawTranslation(translatedText);
 
     const now = new Date();
     const timeTagLocal = now.toLocaleTimeString();
     const timeTagUTC = now.toUTCString().slice(17, 25);
     
-    let formattedInputEntry = `[${timeTagLocal}] (${inputLang}): ${cleanedText}`;
-    let formattedOutputEntry = `[${timeTagLocal} / UTC ${timeTagUTC}] (${outputLang}): ${translatedText}`;
+    let formattedInputEntry = `[${timeTagLocal}] (${currentInLang}): ${cleanedText}`;
+    let formattedOutputEntry = `[${timeTagLocal} / UTC ${timeTagUTC}] (${currentOutLang}): ${translatedText}`;
 
     setTranscript(prev => prev ? `${prev}\n${formattedInputEntry}` : formattedInputEntry);
     setTranslation(prev => prev && !prev.includes('Translated session history') ? `${prev}\n${formattedOutputEntry}` : formattedOutputEntry);
 
     saveToDatabase(cleanedText, translatedText);
 
-    if (autoSpeakOutput) {
-      speakOutputText(translatedText, outputLang);
+    if (autoSpeakOutputRef.current) {
+      speakOutputText(translatedText, currentOutLang);
     }
-  }, [inputLang, outputLang, autoSpeakOutput, performTranslation, saveToDatabase, speakOutputText]);
+  }, [performTranslation, saveToDatabase, speakOutputText]);
 
   // Real-Time Web Speech Recognition Setup with Live Interim Typing Stream
   useEffect(() => {
@@ -865,8 +898,11 @@ function App() {
           <button onClick={() => setShowSettings(!showSettings)} style={{ backgroundColor: '#1e293b', color: '#38bdf8', border: '1px solid #334155', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '600', fontSize: '0.78rem' }}>
             ⚙️ API Key
           </button>
+          <button onClick={handleExportUnicodeTxt} style={{ backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.78rem' }}>
+            📄 TXT (Unicode)
+          </button>
           <button onClick={handleExportLogs} style={{ backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.78rem' }}>
-            📥 Export
+            📥 JSON
           </button>
           <button onClick={handleClearSession} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '700', fontSize: '0.78rem' }}>
             🗑️ Clear
@@ -958,7 +994,6 @@ function App() {
             1. Speech Input Panel
           </h3>
 
-          {/* Dynamic Language Support Feature Banner */}
           <FeatureStatusBanner type="input" langCode={inputLang} availableVoices={availableVoices} />
           
           <SearchableLanguageDropdown 
@@ -1053,7 +1088,6 @@ function App() {
             3. Translation Output Panel
           </h3>
 
-          {/* Dynamic Language Voice Feature Banner */}
           <FeatureStatusBanner type="output" langCode={outputLang} availableVoices={availableVoices} />
 
           <SearchableLanguageDropdown 
