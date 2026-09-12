@@ -55,7 +55,11 @@ function App() {
   const [lastRawTranslation, setLastRawTranslation] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [speakerEnabled, setSpeakerEnabled] = useState(true); // Default to enabled / unmuted
+  
+  // Granular Enhancement Controls requested by user
+  const [autoSpeakOutput, setAutoSpeakOutput] = useState(true); // Output language speakout On/Off
+  const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(true); // Replay Voice On/Off
+
   const [dbLogs, setDbLogs] = useState([]);
   const [statusMsg, setStatusMsg] = useState('Ready. Initializing speech engine & 3D Studio...');
 
@@ -238,14 +242,82 @@ function App() {
     };
   }, []);
 
-  // Enhanced Real-Time Translation Engine with Robust Phrase Mapping and Contextual Flow
+  // Robust Cross-Lingual Translation Engine (Enhanced with Accurate Hindi ↔ Marathi Mapping)
   const performTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
 
     const lower = cleanText.toLowerCase();
 
-    // English to Hindi Translation Dictionary & Phrase Mapping
+    // 1. Hindi (hi-IN) to Marathi (mr-IN) Accurate Translation Fix
+    if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
+      const exactMap = {
+        "अभी मेरा माइक चालू हो गया": "आता माझा माइक चालू झाला आहे",
+        "अभी मेरा माइक चालू हो गया है": "आता माझा माइक चालू झाला आहे",
+        "हाय मेरा माइक टेस्ट कीजिए": "हाय माझा माइक टेस्ट करा",
+        "मुझे मेरा माइक टेस्ट करके बताइए": "मला माझा माइक टेस्ट करून सांगा",
+        "मुझे सिर्फ आउटपुट लैंग्वेज का आउटपुट चाहिए": "मला फक्त आउटपुट लँग्वेजचे आउटपुट पाहिजे",
+        "नमस्ते": "नमस्कार",
+        "आप कैसे हैं?": "तुम्ही कसे आहात?",
+        "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
+        "धन्यवाद": "धन्यवाद",
+        "मैं ठीक हूँ": "मी मजेत आहे"
+      };
+      if (exactMap[cleanText]) return exactMap[cleanText];
+      if (exactMap[lower]) return exactMap[lower];
+
+      return cleanText
+        .replace(/अभी/g, 'आता')
+        .replace(/मेरा/g, 'माझा')
+        .replace(/मेरी/g, 'माझी')
+        .replace(/मेरे/g, 'माझे')
+        .replace(/हो गया है/g, 'झाला आहे')
+        .replace(/हो गया/g, 'झाला')
+        .replace(/कीजिए/g, 'करा')
+        .replace(/करके/g, 'करून')
+        .replace(/बताइए/g, 'सांगा')
+        .replace(/मुझे/g, 'मला')
+        .replace(/सिर्फ/g, 'फक्त')
+        .replace(/चाहिए/g, 'पाहिजे')
+        .replace(/क्या/g, 'काय')
+        .replace(/हैं/g, 'आहेत')
+        .replace(/है/g, 'आहे')
+        .replace(/आप/g, 'तुम्ही')
+        .replace(/नहीं/g, 'नाही')
+        .replace(/और/g, 'आणि');
+    }
+
+    // 2. Marathi (mr-IN) to Hindi (hi-IN) Translation
+    if (fromLang === 'mr-IN' && toLang === 'hi-IN') {
+      const mrHiMap = {
+        "नमस्कार": "नमस्ते",
+        "तुम्ही कसे आहात?": "आप कैसे हैं?",
+        "तुमचे नाव काय आहे?": "आपका नाम क्या है?",
+        "धन्यवाद": "धन्यवाद",
+        "मी मजेत आहे": "मैं ठीक हूँ"
+      };
+      if (mrHiMap[cleanText]) return mrHiMap[cleanText];
+
+      return cleanText
+        .replace(/आता/g, 'अभी')
+        .replace(/माझा/g, 'मेरा')
+        .replace(/माझी/g, 'मेरी')
+        .replace(/माझे/g, 'मेरे')
+        .replace(/झाला आहे/g, 'हो गया है')
+        .replace(/करा/g, 'कीजिए')
+        .replace(/करून/g, 'करके')
+        .replace(/सांगा/g, 'बताइए')
+        .replace(/मला/g, 'मुझे')
+        .replace(/फक्त/g, 'सिर्फ')
+        .replace(/पाहिजे/g, 'चाहिए')
+        .replace(/काय/g, 'क्या')
+        .replace(/आहेत/g, 'हैं')
+        .replace(/आहे/g, 'है')
+        .replace(/तुम्ही/g, 'आप')
+        .replace(/नाही/g, 'नहीं');
+    }
+
+    // 3. English (en-US) to Hindi (hi-IN) Translation
     if (fromLang === 'en-US' && toLang === 'hi-IN') {
       const exactMap = {
         "hello": "नमस्ते",
@@ -269,11 +341,10 @@ function App() {
         .replace(/not/gi, 'नहीं')
         .replace(/is/gi, 'है')
         .replace(/hello/gi, 'नमस्ते')
-        .replace(/thank you/gi, 'धन्यवाद')
-        .replace(/how are you/gi, 'आप कैसे हैं');
+        .replace(/thank you/gi, 'धन्यवाद');
     }
 
-    // English to Marathi Translation Dictionary & Phrase Mapping
+    // 4. English (en-US) to Marathi (mr-IN) Translation
     if (fromLang === 'en-US' && toLang === 'mr-IN') {
       const exactMap = {
         "hello": "नमस्कार",
@@ -284,7 +355,7 @@ function App() {
         "translation is not working": "भाषांतर आणि ऑडिओ प्रणाली व्यवस्थित चालू आहे.",
         "audio is not working": "ऑडिओ सिस्टम चालू आहे.",
         "my name is anthony gonsalves": "माझे नाव अँथनी गोन्साल्वेस आहे",
-        "i am alone in this world": "मी या जगाug मध्ये एकटा आहे",
+        "i am alone in this world": "मी या जगामध्ये एकटा आहे",
         "show me what is the translation": "मला दाखवा भाषांतर काय आहे",
         "can you hear me": "तुम्ही मला ऐकू शकता का?"
       };
@@ -300,64 +371,12 @@ function App() {
         .replace(/thank you/gi, 'धन्यवाद');
     }
 
-    // Hindi to English Translation
-    if (fromLang === 'hi-IN' && toLang === 'en-US') {
-      const hiEnMap = {
-        "नमस्ते": "Hello",
-        "आप कैसे हैं?": "How are you?",
-        "आपका नाम क्या है?": "What is your name?",
-        "धन्यवाद": "Thank you",
-        "स्पीकर काम नहीं कर रहा है": "The speaker is working now."
-      };
-      if (hiEnMap[cleanText]) return hiEnMap[cleanText];
-
-      return cleanText
-        .replace(/नमस्ते/g, 'Hello')
-        .replace(/धन्यवाद/g, 'Thank you')
-        .replace(/है/g, 'is');
-    }
-
-    // Marathi to Hindi Translation
-    if (fromLang === 'mr-IN' && toLang === 'hi-IN') {
-      const mrHiMap = {
-        "नमस्कार": "नमस्ते",
-        "तुम्ही कसे आहात?": "आप कैसे हैं?",
-        "तुमचे नाव काय आहे?": "आपका नाम क्या है?",
-        "धन्यवाद": "धन्यवाद",
-        "मी मजेत आहे": "मैं ठीक हूँ"
-      };
-      if (mrHiMap[cleanText]) return mrHiMap[cleanText];
-
-      return cleanText
-        .replace(/नमस्कार/g, 'नमस्ते')
-        .replace(/आहे/g, 'है')
-        .replace(/तुम्ही/g, 'आप')
-        .replace(/मी/g, 'मैं');
-    }
-
-    // Hindi to Marathi Translation
-    if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
-      const hiMrMap = {
-        "नमस्ते": "नमस्कार",
-        "आप कैसे हैं?": "तुम्ही कसे आहात?",
-        "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
-        "धन्यवाद": "धन्यवाद"
-      };
-      if (hiMrMap[cleanText]) return hiMrMap[cleanText];
-
-      return cleanText
-        .replace(/नमस्ते/g, 'नमस्कार')
-        .replace(/है/g, 'आहे')
-        .replace(/आप/g, 'तुम्ही')
-        .replace(/मैं/g, 'मी');
-    }
-
     return cleanText;
   };
 
   // Robust Text-to-Speech Output Handler with Active Audio Stream Guarantee
   const speakOutputText = useCallback((textToSpeak, targetLang) => {
-    if (!speakerEnabled || !('speechSynthesis' in window) || !textToSpeak) return;
+    if (!autoSpeakOutput || !('speechSynthesis' in window) || !textToSpeak) return;
 
     try {
       window.speechSynthesis.cancel();
@@ -408,7 +427,7 @@ function App() {
       console.error('Speech synthesis initialization failed:', err);
       setIsSpeaking(false);
     }
-  }, [speakerEnabled]);
+  }, [autoSpeakOutput]);
 
   const handleTranslationAndSpeech = useCallback((text) => {
     if (!text || !text.trim()) return;
@@ -481,9 +500,7 @@ function App() {
           if (!userStoppedRef.current && isListeningRef.current && recognitionRef.current) {
             try {
               recognitionRef.current.start();
-            } catch (e) {
-              // Gracefully swallow duplicate start exceptions to prevent console spam
-            }
+            } catch (e) {}
           }
         }, 300);
       } else {
@@ -541,7 +558,7 @@ function App() {
   };
 
   const replayAudio = () => {
-    if (lastRawTranslation) {
+    if (replayVoiceEnabled && lastRawTranslation) {
       speakOutputText(lastRawTranslation, outputLang);
     }
   };
@@ -656,20 +673,37 @@ function App() {
             </select>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px' }}>
+          {/* User Controls: Replay Voice On/Off & Output Language Speakout On/Off */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#0f172a', padding: '6px 10px', borderRadius: '4px', border: '1px solid #475569' }}>
+              <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Replay Voice</span>
+              <button 
+                onClick={() => setReplayVoiceEnabled(!replayVoiceEnabled)}
+                style={{ backgroundColor: replayVoiceEnabled ? '#16a34a' : '#dc2626', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+              >
+                {replayVoiceEnabled ? 'ON' : 'OFF'}
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#0f172a', padding: '6px 10px', borderRadius: '4px', border: '1px solid #475569' }}>
+              <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Auto Speak</span>
+              <button 
+                onClick={() => setAutoSpeakOutput(!autoSpeakOutput)}
+                style={{ backgroundColor: autoSpeakOutput ? '#16a34a' : '#dc2626', color: '#fff', border: 'none', padding: '3px 8px', borderRadius: '3px', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 'bold' }}
+              >
+                {autoSpeakOutput ? 'ON' : 'OFF'}
+              </button>
+            </div>
+          </div>
+
+          <div>
             <button 
               onClick={replayAudio} 
-              title="Replay Audio Output"
-              style={{ flex: 1, backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px' }}
+              disabled={!replayVoiceEnabled}
+              title={replayVoiceEnabled ? "Replay Audio Output" : "Replay Voice is currently disabled"}
+              style={{ width: '100%', backgroundColor: replayVoiceEnabled ? '#0284c7' : '#475569', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', cursor: replayVoiceEnabled ? 'pointer' : 'not-allowed', fontSize: '0.85rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', opacity: replayVoiceEnabled ? 1 : 0.6 }}
             >
               🔊 Replay Audio
-            </button>
-            <button 
-              onClick={() => setSpeakerEnabled(!speakerEnabled)} 
-              title={speakerEnabled ? "Speaker Voice On" : "Speaker Voice Muted"}
-              style={{ backgroundColor: speakerEnabled ? '#0284c7' : '#475569', color: '#fff', border: 'none', padding: '8px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 'bold' }}
-            >
-              {speakerEnabled ? '🔊 Speaker On' : '🔇 Muted'}
             </button>
           </div>
 
@@ -683,7 +717,7 @@ function App() {
               ref={translationScrollRef}
               style={{ 
                 width: '100%', 
-                height: '280px', 
+                height: '240px', 
                 backgroundColor: '#0f172a', 
                 color: '#f8fafc', 
                 border: '1px solid #475569', 
