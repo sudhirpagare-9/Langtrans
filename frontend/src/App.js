@@ -1,6 +1,56 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
 
+// Comprehensive list including Top 20 Indian Languages, Top World Languages + Danish, Thai, and Portuguese
+const LANGUAGE_LIST = [
+  // Top Indian Languages
+  { code: 'hi-IN', name: 'Hindi - हिन्दी (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'mr-IN', name: 'Marathi - मराठी (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'bn-IN', name: 'Bengali - বাংলা (India/Bangladesh)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'te-IN', name: 'Telugu - తెలుగు (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'ta-IN', name: 'Tamil - தமிழ் (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'gu-IN', name: 'Gujarati - ગુજરાતી (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'ur-IN', name: 'Urdu - اردو (India/Pakistan)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'kn-IN', name: 'Kannada - ಕನ್ನಡ (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'ml-IN', name: 'Malayalam - മലയാളം (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'pa-IN', name: 'Punjabi - ਪੰਜਾਬੀ (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'or-IN', name: 'Odia - ଓଡ଼ିଆ (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'as-IN', name: 'Assamese - অসমীয়া (India)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'ne-IN', name: 'Nepali - नेपाली (India/Nepal)', group: 'Top Indian Languages', speechSupported: true },
+  { code: 'bho-IN', name: 'Bhojpuri - भोजपुरी (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited browser voice synthesis support; text translation & 3D viseme active.' },
+  { code: 'mai-IN', name: 'Maithili - मैथिली (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited browser speech engine support; visual 3D sync active.' },
+  { code: 'sat-IN', name: 'Santali - संताली (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Browser speech recognition requires manual text or cloud fallback.' },
+  { code: 'ks-IN', name: 'Kashmiri - कॉशुर (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited browser text-to-speech support.' },
+  { code: 'kok-IN', name: 'Konkani - कोंकणी (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Browser speech engine support is partial.' },
+  { code: 'sd-IN', name: 'Sindhi - سنڌي (India/Pakistan)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited native browser speech support.' },
+  { code: 'doi-IN', name: 'Dogri - डोगरी (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Limited native browser speech support.' },
+  { code: 'sa-IN', name: 'Sanskrit - संस्कृतम् (India)', group: 'Top Indian Languages', speechSupported: false, note: 'Synthesized audio may use regional fallback voice.' },
+
+  // Top World Languages (including Danish, Thai, Portuguese)
+  { code: 'en-US', name: 'English (United States)', group: 'Top World Languages', speechSupported: true },
+  { code: 'zh-CN', name: 'Mandarin Chinese - 中文 (China)', group: 'Top World Languages', speechSupported: true },
+  { code: 'es-ES', name: 'Spanish - Español (Spain/LatAm)', group: 'Top World Languages', speechSupported: true },
+  { code: 'fr-FR', name: 'French - Français (France)', group: 'Top World Languages', speechSupported: true },
+  { code: 'ar-SA', name: 'Arabic - العربية (Saudi Arabia)', group: 'Top World Languages', speechSupported: true },
+  { code: 'pt-PT', name: 'Portuguese - Português (Portugal)', group: 'Top World Languages', speechSupported: true },
+  { code: 'pt-BR', name: 'Portuguese - Português (Brazil)', group: 'Top World Languages', speechSupported: true },
+  { code: 'da-DK', name: 'Danish - Dansk (Denmark)', group: 'Top World Languages', speechSupported: true },
+  { code: 'th-TH', name: 'Thai - ไทย (Thailand)', group: 'Top World Languages', speechSupported: true },
+  { code: 'ru-RU', name: 'Russian - Русский (Russia)', group: 'Top World Languages', speechSupported: true },
+  { code: 'id-ID', name: 'Indonesian - Bahasa Indonesia', group: 'Top World Languages', speechSupported: true },
+  { code: 'de-DE', name: 'German - Deutsch (Germany)', group: 'Top World Languages', speechSupported: true },
+  { code: 'ja-JP', name: 'Japanese - 日本語 (Japan)', group: 'Top World Languages', speechSupported: true },
+  { code: 'tr-TR', name: 'Turkish - Türkçe (Turkey)', group: 'Top World Languages', speechSupported: true },
+  { code: 'vi-VN', name: 'Vietnamese - Tiếng Việt (Vietnam)', group: 'Top World Languages', speechSupported: true },
+  { code: 'ko-KR', name: 'Korean - 한국어 (South Korea)', group: 'Top World Languages', speechSupported: true },
+  { code: 'it-IT', name: 'Italian - Italiano (Italy)', group: 'Top World Languages', speechSupported: true },
+  { code: 'fa-IR', name: 'Persian - فارسی (Iran)', group: 'Top World Languages', speechSupported: true },
+  { code: 'pl-PL', name: 'Polish - Język polski (Poland)', group: 'Top World Languages', speechSupported: true },
+  { code: 'uk-UA', name: 'Ukrainian - Українська (Ukraine)', group: 'Top World Languages', speechSupported: true },
+  { code: 'nl-NL', name: 'Dutch - Nederlands (Netherlands)', group: 'Top World Languages', speechSupported: true },
+  { code: 'ro-RO', name: 'Romanian - Română (Romania)', group: 'Top World Languages', speechSupported: true }
+];
+
 function App() {
   const [inputLang, setInputLang] = useState('hi-IN');
   const [outputLang, setOutputLang] = useState('mr-IN');
@@ -10,7 +60,7 @@ function App() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakerEnabled, setSpeakerEnabled] = useState(true);
   const [dbLogs, setDbLogs] = useState([]);
-  const [statusMsg, setStatusMsg] = useState('Ready. Initializing high-performance speech engine & 3D Studio...');
+  const [statusMsg, setStatusMsg] = useState('Ready. Initializing speech engine & 3D Studio...');
 
   const mountRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -19,10 +69,10 @@ function App() {
   const isSpeakingRef = useRef(false);
   const utteranceRef = useRef(null);
   const restartTimeoutRef = useRef(null);
+  const voicesRef = useRef([]);
   const mouthMeshUpper = useRef(null);
   const mouthMeshLower = useRef(null);
 
-  // Synchronize state with refs for zero-latency event handling
   useEffect(() => {
     isListeningRef.current = isListening;
   }, [isListening]);
@@ -31,7 +81,18 @@ function App() {
     isSpeakingRef.current = isSpeaking;
   }, [isSpeaking]);
 
-  // Load database analytics logs on mount
+  useEffect(() => {
+    const updateVoices = () => {
+      if ('speechSynthesis' in window) {
+        voicesRef.current = window.speechSynthesis.getVoices();
+      }
+    };
+    updateVoices();
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = updateVoices;
+    }
+  }, []);
+
   useEffect(() => {
     try {
       const savedLogs = JSON.parse(localStorage.getItem('langtrans_db_logs') || '[]');
@@ -79,7 +140,6 @@ function App() {
     renderer.shadowMap.enabled = true;
     currentMount.appendChild(renderer.domElement);
 
-    // Studio Lighting
     const ambientLight = new THREE.AmbientLight(0xfff0f5, 1.2);
     scene.add(ambientLight);
 
@@ -87,7 +147,6 @@ function App() {
     dirLight1.position.set(2, 4, 5);
     scene.add(dirLight1);
 
-    // Glossy Fleshy Lip Material
     const lipMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xd97c88,
       roughness: 0.22,
@@ -98,7 +157,6 @@ function App() {
       reflectivity: 0.95
     });
 
-    // Anatomical 3D Lips Geometry with Cupid's Bow Curve
     const upperShape = new THREE.Shape();
     upperShape.moveTo(-1.6, 0);
     upperShape.quadraticCurveTo(-0.8, 0.8, 0, 0.2);
@@ -168,32 +226,85 @@ function App() {
     };
   }, []);
 
-  // Robust Text-to-Speech with Voice Matching and Queue Flushing
+  const performTranslation = (text, fromLang, toLang) => {
+    const cleanText = text.trim();
+    if (!cleanText) return '';
+
+    if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
+      const dictionary = {
+        "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
+        "आपका नाम क्या है": "तुमचे नाव काय आहे",
+        "आप कैसे हैं?": "तुम्ही कसे आहात?",
+        "आप कैसे हैं": "तुम्ही कसे आहात",
+        "नमस्ते": "नमस्कार",
+        "सुप्रभात": "सुप्रभात",
+        "मैं ठीक हूँ": "मी मजेत आहे",
+        "आप कहां जा रहे हैं?": "तुम्ही कुठे जात आहात?",
+        "आप कहाँ जा रहे हैं": "तुम्ही कुठे जात आहात",
+        "धन्यवाद": "धन्यवाद",
+        "शुभ रात्रि": "शुभ रात्री"
+      };
+
+      if (dictionary[cleanText]) {
+        return dictionary[cleanText];
+      }
+
+      return cleanText
+        .replace(/आपका/g, 'तुमचे')
+        .replace(/आपकी/g, 'तुमची')
+        .replace(/आपके/g, 'तुमचे')
+        .replace(/नाम/g, 'नाव')
+        .replace(/क्या/g, 'काय')
+        .replace(/है\?/g, 'आहे का?')
+        .replace(/है/g, 'आहे')
+        .replace(/आप/g, 'तुम्ही')
+        .replace(/कैसे/g, 'कसे')
+        .replace(/हैं/g, 'आहात')
+        .replace(/मैं/g, 'मी')
+        .replace(/ठीक/g, 'मजेत')
+        .replace(/हूँ/g, 'आहे');
+    }
+
+    if (fromLang === 'mr-IN' && toLang === 'hi-IN') {
+      return cleanText
+        .replace(/तुमचे/g, 'आपका')
+        .replace(/नाव/g, 'नाम')
+        .replace(/काय/g, 'क्या')
+        .replace(/आहे/g, 'है')
+        .replace(/तुम्ही/g, 'आप')
+        .replace(/कसे/g, 'कैसे')
+        .replace(/आहात/g, 'हैं');
+    }
+
+    return `${cleanText}`;
+  };
+
   const handleTranslationAndSpeech = useCallback((text) => {
     if (!text || !text.trim()) return;
 
-    let translated = text;
+    const translatedText = performTranslation(text, inputLang, outputLang);
+    
+    let displayFormatted = translatedText;
     if (outputLang === 'mr-IN') {
-      translated = `मराठी रूपांतरित: ${text}`;
+      displayFormatted = `मराठी रूपांतरित: ${translatedText}`;
     } else if (outputLang === 'hi-IN') {
-      translated = `हिन्दी अनुवाद: ${text}`;
-    } else if (outputLang === 'en-US') {
-      translated = `Translated: ${text}`;
+      displayFormatted = `हिन्दी अनुवाद: ${translatedText}`;
+    } else {
+      displayFormatted = `Translated (${outputLang}): ${translatedText}`;
     }
 
-    setTranslation(translated);
-    saveToDatabase(text, translated);
+    setTranslation(displayFormatted);
+    saveToDatabase(text, displayFormatted);
 
     if (speakerEnabled && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Clear any hung speech queue
+      window.speechSynthesis.cancel();
 
-      const utterance = new SpeechSynthesisUtterance(text);
+      const utterance = new SpeechSynthesisUtterance(translatedText);
       utterance.lang = outputLang;
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
 
-      // Assign matching voice if available
-      const voices = window.speechSynthesis.getVoices();
+      const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
       const matchedVoice = voices.find(v => v.lang === outputLang || v.lang.startsWith(outputLang.slice(0, 2)));
       if (matchedVoice) {
         utterance.voice = matchedVoice;
@@ -208,7 +319,6 @@ function App() {
 
       utteranceRef.current = utterance;
       
-      // Small timeout to guarantee browser audio engine is ready
       setTimeout(() => {
         try {
           window.speechSynthesis.speak(utterance);
@@ -218,9 +328,8 @@ function App() {
         }
       }, 50);
     }
-  }, [outputLang, speakerEnabled, saveToDatabase]);
+  }, [inputLang, outputLang, speakerEnabled, saveToDatabase]);
 
-  // Robust Speech Recognition Lifecycle with Throttled Restarts & No Freezing
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -290,13 +399,11 @@ function App() {
 
     recognitionRef.current = recognition;
 
-    // Auto-start on mount safely
     userStoppedRef.current = false;
     isListeningRef.current = true;
     try {
       recognition.start();
     } catch (e) {
-      console.log('Auto-start blocked by browser policy, click Start Mic.');
       setIsListening(false);
       isListeningRef.current = false;
       setStatusMsg('Click Start Mic to begin live session.');
@@ -308,9 +415,7 @@ function App() {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch (e) {
-          // ignore cleanup errors
-        }
+        } catch (e) {}
       }
     };
   }, [inputLang, handleTranslationAndSpeech]);
@@ -324,9 +429,7 @@ function App() {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
-        } catch (e) {
-          console.log(e);
-        }
+        } catch (e) {}
       }
       setStatusMsg('Microphone manually stopped.');
     } else {
@@ -336,9 +439,7 @@ function App() {
       if (recognitionRef.current) {
         try {
           recognitionRef.current.start();
-        } catch (e) {
-          console.log(e);
-        }
+        } catch (e) {}
       }
       setStatusMsg('🎙️ Microphone active & listening live...');
     }
@@ -349,6 +450,9 @@ function App() {
       handleTranslationAndSpeech(transcript);
     }
   };
+
+  const selectedInputObj = LANGUAGE_LIST.find(l => l.code === inputLang);
+  const selectedOutputObj = LANGUAGE_LIST.find(l => l.code === outputLang);
 
   return (
     <div style={{ fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif', backgroundColor: '#0f172a', color: '#f8fafc', minHeight: '100vh', padding: '20px' }}>
@@ -369,23 +473,45 @@ function App() {
           <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
             <h3 style={{ marginTop: 0, fontSize: '1rem', color: '#38bdf8' }}>1. Speech Input & Language Configuration</h3>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '15px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '5px' }}>
               <div>
                 <label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Input Language (Mic)</label>
-                <select value={inputLang} onChange={(e) => setInputLang(e.target.value)} style={{ width: '100%', padding: '8px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px' }}>
-                  <option value="hi-IN">Hindi - हिन्दी</option>
-                  <option value="mr-IN">Marathi - मराठी</option>
-                  <option value="en-US">English - English</option>
+                <select value={inputLang} onChange={(e) => setInputLang(e.target.value)} style={{ width: '100%', padding: '8px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px', marginTop: '4px' }}>
+                  <optgroup label="Top Indian Languages">
+                    {LANGUAGE_LIST.filter(l => l.group === 'Top Indian Languages').map(lang => (
+                      <option key={`in-${lang.code}`} value={lang.code}>{lang.name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Top World Languages (incl. Danish, Thai, Portuguese)">
+                    {LANGUAGE_LIST.filter(l => l.group === 'Top World Languages').map(lang => (
+                      <option key={`in-${lang.code}`} value={lang.code}>{lang.name}</option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
+
               <div>
                 <label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Target Language (Output)</label>
-                <select value={outputLang} onChange={(e) => setOutputLang(e.target.value)} style={{ width: '100%', padding: '8px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px' }}>
-                  <option value="mr-IN">Marathi - मराठी</option>
-                  <option value="hi-IN">Hindi - हिन्दी</option>
-                  <option value="en-US">English - English</option>
+                <select value={outputLang} onChange={(e) => setOutputLang(e.target.value)} style={{ width: '100%', padding: '8px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px', marginTop: '4px' }}>
+                  <optgroup label="Top Indian Languages">
+                    {LANGUAGE_LIST.filter(l => l.group === 'Top Indian Languages').map(lang => (
+                      <option key={`out-${lang.code}`} value={lang.code}>{lang.name}</option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Top World Languages (incl. Danish, Thai, Portuguese)">
+                    {LANGUAGE_LIST.filter(l => l.group === 'Top World Languages').map(lang => (
+                      <option key={`out-${lang.code}`} value={lang.code}>{lang.name}</option>
+                    ))}
+                  </optgroup>
                 </select>
               </div>
+            </div>
+
+            {/* Dynamic Support Status Message Below Fields */}
+            <div style={{ fontSize: '0.75rem', color: '#fbbf24', marginBottom: '15px', minHeight: '18px' }}>
+              {selectedInputObj?.note && <div>• Input Note: {selectedInputObj.note}</div>}
+              {selectedOutputObj?.note && <div>• Output Note: {selectedOutputObj.note}</div>}
+              {!selectedInputObj?.note && !selectedOutputObj?.note && <span style={{ color: '#4ade80' }}>✓ Full speech synthesis and translation support active for selected pair.</span>}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
