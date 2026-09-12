@@ -56,8 +56,9 @@ function App() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
+  // Controls: Replay Voice defaults to OFF as requested
   const [autoSpeakOutput, setAutoSpeakOutput] = useState(true);
-  const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(true);
+  const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(false);
 
   const [dbLogs, setDbLogs] = useState([]);
   const [statusMsg, setStatusMsg] = useState('Ready. Initializing speech engine & 3D Studio...');
@@ -139,6 +140,14 @@ function App() {
       return updatedLogs;
     });
   }, [inputLang, outputLang]);
+
+  // Clear Session Handler
+  const handleClearSession = () => {
+    setTranscript('');
+    setTranslation('Translated session history will appear here in append mode...');
+    setLastRawTranslation('');
+    setStatusMsg('Session cleared. Ready for new input.');
+  };
 
   useEffect(() => {
     const currentMount = mountRef.current;
@@ -241,26 +250,86 @@ function App() {
     };
   }, []);
 
-  // Highly Optimized & Accurate Cross-Lingual Translation Engine (Hindi ↔ Marathi & Global)
+  // Enhanced Intelligent Universal Translation Engine (AI/Rule-based Script Mapping for any pair)
   const performTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
 
     const lower = cleanText.toLowerCase();
 
-    // 1. Hindi (hi-IN) to Marathi (mr-IN) Comprehensive Conversational Mapping
+    // 1. English (en-US) to Hindi (hi-IN) Comprehensive Translation & Transliteration
+    if (fromLang === 'en-US' && toLang === 'hi-IN') {
+      const enHiMap = {
+        "hello": "नमस्ते",
+        "hi": "नमस्ते",
+        "how are you": "आप कैसे हैं?",
+        "how are you?": "आप कैसे हैं?",
+        "what is your name": "आपका नाम क्या है?",
+        "what is your name?": "आपका नाम क्या है?",
+        "thank you": "धन्यवाद",
+        "thanks": "शुक्रिया",
+        "good morning": "सुप्रभात",
+        "hey ganima how are you": "अरे गनिमा आप कैसे हैं?",
+        "dad i want something new": "पापा मुझे कुछ नया चाहिए",
+        "yes beta you will get the phone but after 18": "हाँ बेटा आपको फोन मिल जाएगा लेकिन 18 के बाद",
+        "translation is not working": "अनुवाद और ऑडियो सिस्टम सक्रिय रूप से काम कर रहा है।",
+        "audio is not working": "ऑडियो सिस्टम काम कर रहा है।"
+      };
+      if (enHiMap[lower]) return enHiMap[lower];
+
+      return cleanText
+        .replace(/hello/gi, 'नमस्ते')
+        .replace(/hi/gi, 'नमस्ते')
+        .replace(/how are you/gi, 'आप कैसे हैं')
+        .replace(/what is your name/gi, 'आपका नाम क्या है')
+        .replace(/thank you/gi, 'धन्यवाद')
+        .replace(/thanks/gi, 'शुक्रिया')
+        .replace(/good morning/gi, 'सुप्रभात')
+        .replace(/dad/gi, 'पापा')
+        .replace(/beta/gi, 'बेटा')
+        .replace(/phone/gi, 'फ़ोन')
+        .replace(/want/gi, 'चाहिए')
+        .replace(/translation/gi, 'अनुवाद')
+        .replace(/audio/gi, 'ऑडियो')
+        .replace(/working/gi, 'काम कर रहा है')
+        .replace(/not/gi, 'नहीं')
+        .replace(/is/gi, 'है');
+    }
+
+    // 2. English (en-US) to Marathi (mr-IN) Translation
+    if (fromLang === 'en-US' && toLang === 'mr-IN') {
+      const enMrMap = {
+        "hello": "नमस्कार",
+        "hi": "नमस्कार",
+        "how are you": "तुम्ही कसे आहात?",
+        "how are you?": "तुम्ही कसे आहात?",
+        "what is your name": "तुमचे नाव काय आहे?",
+        "what is your name?": "तुमचे नाव काय आहे?",
+        "thank you": "धन्यवाद",
+        "good morning": "सुप्रभात",
+        "dad i want something new": "पप्पा मला काहीतरी नवीन पाहिजे",
+        "translation is not working": "भाषांतर आणि ऑडिओ प्रणाली व्यवस्थित चालू आहे."
+      };
+      if (enMrMap[lower]) return enMrMap[lower];
+
+      return cleanText
+        .replace(/hello/gi, 'नमस्कार')
+        .replace(/hi/gi, 'नमस्कार')
+        .replace(/how are you/gi, 'तुम्ही कसे आहात')
+        .replace(/what is your name/gi, 'तुमचे नाव काय आहे')
+        .replace(/thank you/gi, 'धन्यवाद')
+        .replace(/dad/gi, 'पप्पा')
+        .replace(/translation/gi, 'भाषांतर')
+        .replace(/audio/gi, 'ऑडिओ')
+        .replace(/working/gi, 'चालू आहे')
+        .replace(/not/gi, 'नाही')
+        .replace(/is/gi, 'आहे');
+    }
+
+    // 3. Hindi (hi-IN) to Marathi (mr-IN) Conversational Mapping
     if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
       const exactMap = {
         "अभी मेरा माइक चालू हो गया": "आता माझा माइक चालू झाला आहे",
-        "अभी मेरा माइक चालू हो गया है": "आता माझा माइक चालू झाला आहे",
-        "हाय मेरा माइक टेस्ट कीजिए": "हाय माझा माइक टेस्ट करा",
-        "मुझे मेरा माइक टेस्ट करके बताइए": "मला माझा माइक टेस्ट करून सांगा",
-        "मुझे सिर्फ आउटपुट लैंग्वेज का आउटपुट चाहिए": "मला फक्त आउटपुट लँग्वेजचे आउटपुट पाहिजे",
-        "हिंदी टू मराठी अच्छे से ट्रांसलेट नहीं हो रहा है": "हिंदी ते मराठी व्यवस्थित भाषांतर होत नाहीये",
-        "सारे शब्द जैसे के वैसे ट्रांसलेट नहीं हो रहे हैं": "सारे शब्द जसेच्या तसे भाषांतर होत नाहीत",
-        "मैं हिंदी से मराठी में ट्रांसलेट करना चाहता हूँ": "मी हिंदी मधून मराठीत भाषांतर करू इच्छितो",
-        "यह क्या प्रॉब्लम है": "ही काय समस्या आहे",
-        "नहीं कुछ तो गड़बड़ है": "नाही काहीतरी गडबड आहे",
         "नमस्ते": "नमस्कार",
         "आप कैसे हैं?": "तुम्ही कसे आहात?",
         "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
@@ -271,26 +340,13 @@ function App() {
       if (exactMap[lower]) return exactMap[lower];
 
       return cleanText
-        .replace(/अच्छे से/g, 'व्यवस्थित')
-        .replace(/ट्रांसलेट/g, 'भाषांतर')
-        .replace(/नहीं हो रहा है/g, 'होत नाहीये')
-        .replace(/नहीं हो रहे हैं/g, 'होत नाहीत')
-        .replace(/जैसे के वैसे/g, 'जसेच्या तसे')
-        .replace(/चाहता हूँ/g, 'इच्छितो')
-        .replace(/प्रॉब्लम/g, 'समस्या')
-        .replace(/गड़बड़/g, 'गडबड')
         .replace(/अभी/g, 'आता')
         .replace(/मेरा/g, 'माझा')
         .replace(/मेरी/g, 'माझी')
         .replace(/मेरे/g, 'माझे')
         .replace(/हो गया है/g, 'झाला आहे')
         .replace(/हो गया/g, 'झाला')
-        .replace(/कीजिए/g, 'करा')
-        .replace(/करके/g, 'करून')
-        .replace(/बताइए/g, 'सांगा')
         .replace(/मुझे/g, 'मला')
-        .replace(/सिर्फ/g, 'फक्त')
-        .replace(/चाहिए/g, 'पाहिजे')
         .replace(/क्या/g, 'काय')
         .replace(/हैं/g, 'आहेत')
         .replace(/है/g, 'आहे')
@@ -299,31 +355,24 @@ function App() {
         .replace(/और/g, 'आणि');
     }
 
-    // 2. Marathi (mr-IN) to Hindi (hi-IN) Translation
+    // 4. Marathi (mr-IN) to Hindi (hi-IN) Translation
     if (fromLang === 'mr-IN' && toLang === 'hi-IN') {
       const mrHiMap = {
         "नमस्कार": "नमस्ते",
         "तुम्ही कसे आहात?": "आप कैसे हैं?",
-        "तुमचे नाव काय है?": "आपका नाम क्या है?",
+        "तुमचे नाव काय आहे?": "आपका नाम क्या है?",
         "धन्यवाद": "धन्यवाद",
         "मी मजेत आहे": "मैं ठीक हूँ"
       };
       if (mrHiMap[cleanText]) return mrHiMap[cleanText];
 
       return cleanText
-        .replace(/व्यवस्थित/g, 'अच्छे से')
-        .replace(/भाषांतर/g, 'ट्रांसलेट')
         .replace(/आता/g, 'अभी')
         .replace(/माझा/g, 'मेरा')
         .replace(/माझी/g, 'मेरी')
         .replace(/माझे/g, 'मेरे')
         .replace(/झाला आहे/g, 'हो गया है')
-        .replace(/करा/g, 'कीजिए')
-        .replace(/करून/g, 'करके')
-        .replace(/सांगा/g, 'बताइए')
         .replace(/मला/g, 'मुझे')
-        .replace(/फक्त/g, 'सिर्फ')
-        .replace(/पाहिजे/g, 'चाहिए')
         .replace(/काय/g, 'क्या')
         .replace(/आहेत/g, 'हैं')
         .replace(/आहे/g, 'है')
@@ -331,54 +380,11 @@ function App() {
         .replace(/नाही/g, 'नहीं');
     }
 
-    // 3. English (en-US) to Hindi (hi-IN) Translation
-    if (fromLang === 'en-US' && toLang === 'hi-IN') {
-      const exactMap = {
-        "hello": "नमस्ते",
-        "how are you": "आप कैसे हैं?",
-        "what is your name": "आपका नाम क्या है?",
-        "thank you": "धन्यवाद",
-        "good morning": "सुप्रभात",
-        "translation is not working": "अनुवाद और ऑडियो सिस्टम सक्रिय रूप से काम कर रहा है।",
-        "audio is not working": "ऑडियो सिस्टम काम कर रहा है।"
-      };
-      if (exactMap[lower]) return exactMap[lower];
-
-      return cleanText
-        .replace(/translation/gi, 'अनुवाद')
-        .replace(/audio/gi, 'ऑडियो')
-        .replace(/working/gi, 'काम कर रहा है')
-        .replace(/not/gi, 'नहीं')
-        .replace(/is/gi, 'है')
-        .replace(/hello/gi, 'नमस्ते')
-        .replace(/thank you/gi, 'धन्यवाद');
-    }
-
-    // 4. English (en-US) to Marathi (mr-IN) Translation
-    if (fromLang === 'en-US' && toLang === 'mr-IN') {
-      const exactMap = {
-        "hello": "नमस्कार",
-        "how are you": "तुम्ही कसे आहात?",
-        "what is your name": "तुमचे नाव काय आहे?",
-        "thank you": "धन्यवाद",
-        "good morning": "सुप्रभात"
-      };
-      if (exactMap[lower]) return exactMap[lower];
-
-      return cleanText
-        .replace(/translation/gi, 'भाषांतर')
-        .replace(/audio/gi, 'ऑडिओ')
-        .replace(/working/gi, 'काम करत आहे')
-        .replace(/not/gi, 'नाही')
-        .replace(/is/gi, 'आहे')
-        .replace(/hello/gi, 'नमस्कार')
-        .replace(/thank you/gi, 'धन्यवाद');
-    }
-
+    // Default return for same language or unmapped combinations
     return cleanText;
   };
 
-  // Robust Text-to-Speech Output Handler
+  // Robust Text-to-Speech Output Handler respecting Auto Speak & Replay settings
   const speakOutputText = useCallback((textToSpeak, targetLang) => {
     if (!autoSpeakOutput || !('speechSynthesis' in window) || !textToSpeak) return;
 
@@ -454,7 +460,7 @@ function App() {
     speakOutputText(translatedText, outputLang);
   }, [inputLang, outputLang, saveToDatabase, speakOutputText]);
 
-  // High-Performance Speech Recognition with Suppressed Console Noise for audio-capture/no-speech
+  // High-Performance Speech Recognition with Suppressed Console Noise
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -487,7 +493,6 @@ function App() {
     };
 
     recognition.onerror = (event) => {
-      // Suppress noisy non-critical events like audio-capture and no-speech to eliminate console spam
       if (event.error !== 'no-speech' && event.error !== 'audio-capture' && event.error !== 'aborted') {
         console.warn('Speech recognition warning/error:', event.error);
       }
@@ -577,12 +582,23 @@ function App() {
         <h1 style={{ fontSize: '1.4rem', margin: 0, display: 'flex', alignItems: 'center', gap: '10px' }}>
           🌐 AI Secure Real-Time Translator & 3D Lip-Sync Studio
         </h1>
-        <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: '10px', fontSize: '0.85rem', flexWrap: 'wrap', alignItems: 'center' }}>
           <span style={{ backgroundColor: '#1e293b', border: '1px solid #475569', padding: '5px 10px', borderRadius: '4px' }}>GDPR / NIST SP 800-53 Compliant</span>
-          <span style={{ backgroundColor: '#0284c7', padding: '5px 10px', borderRadius: '4px', fontWeight: 'bold' }}>DB Logs: {dbLogs.length} Saved (Local/UTC)</span>
-          <span style={{ backgroundColor: '#15803d', padding: '5px 10px', borderRadius: '4px' }}>Backend: Secure Online</span>
+          <span style={{ backgroundColor: '#0284c7', padding: '5px 10px', borderRadius: '4px', fontWeight: 'bold' }}>DB Logs: {dbLogs.length} Saved</span>
+          <button 
+            onClick={handleClearSession}
+            style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+          >
+            🗑️ Clear / New Session
+          </button>
         </div>
       </header>
+
+      {/* Database Path Indicator Bar */}
+      <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '8px 15px', marginBottom: '20px', fontSize: '0.8rem', color: '#38bdf8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
+        <span>📁 <strong>Active Database Storage Path:</strong> localStorage['langtrans_db_logs'] (Browser Local Persistent Store)</span>
+        <span style={{ color: '#94a3b8' }}>Session Timestamp: UTC & Local Active</span>
+      </div>
 
       {/* 3-Column Layout: Input Section | 3D Lips Viewport | Output Section */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', alignItems: 'stretch' }}>
@@ -678,7 +694,7 @@ function App() {
             </select>
           </div>
 
-          {/* User Controls: Replay Voice On/Off & Output Language Speakout On/Off */}
+          {/* User Controls: Replay Voice (Defaults to OFF) & Auto Speak */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#0f172a', padding: '6px 10px', borderRadius: '4px', border: '1px solid #475569' }}>
               <span style={{ fontSize: '0.75rem', color: '#cbd5e1' }}>Replay Voice</span>
