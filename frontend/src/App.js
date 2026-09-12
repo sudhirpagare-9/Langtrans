@@ -405,7 +405,7 @@ export default function App() {
     }
   }, []);
 
-  // Load local database logs
+  // Load local database logs with Unicode support
   useEffect(() => {
     try {
       const savedLogs = JSON.parse(localStorage.getItem('langtrans_db_logs') || '[]');
@@ -462,7 +462,7 @@ export default function App() {
       outputLanguage: outputLang,
       logs: dbLogs
     };
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
@@ -630,7 +630,7 @@ export default function App() {
       }
     }
 
-    // Tier 2: MyMemory Free Translation API (CORS-friendly for browser deployments like GitHub Pages)
+    // Tier 2: MyMemory Free Translation API (CORS-friendly for browser deployments like GitHub Pages / Vercel)
     try {
       const myMemoryUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${sourceIso}|${targetIso}`;
       const res = await fetch(myMemoryUrl);
@@ -962,7 +962,7 @@ export default function App() {
             <h1 style={{ fontSize: '1.15rem', fontWeight: '800', margin: 0, background: 'linear-gradient(90deg, #38bdf8, #a78bfa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Vibrant AI Studio Real-Time Viseme Studio
             </h1>
-            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Male/Female Voice Gender Selection • Auto-Healing Continuous Mic Stream</span>
+            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Male/Female Voice Gender Selection • Auto-Healing Continuous Mic Stream • Unicode Safe</span>
           </div>
         </div>
 
