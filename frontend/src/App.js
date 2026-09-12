@@ -18,6 +18,7 @@ function App() {
   const userStoppedRef = useRef(false);
   const isSpeakingRef = useRef(false);
   const utteranceRef = useRef(null);
+  const restartTimeoutRef = useRef(null);
   const mouthMeshUpper = useRef(null);
   const mouthMeshLower = useRef(null);
 
@@ -136,7 +137,6 @@ function App() {
       if (upperLip && lowerLip) {
         let speakFactor = 0;
         if (isSpeakingRef.current) {
-          // High-frequency responsive viseme modulation synchronized with speech output
           speakFactor = Math.sin(elapsedTime * 35) * 0.28 + Math.cos(elapsedTime * 22) * 0.14;
         } else if (isListeningRef.current) {
           speakFactor = Math.sin(elapsedTime * 8) * 0.04;
@@ -168,10 +168,11 @@ function App() {
     };
   }, []);
 
+  // Robust Text-to-Speech with Voice Matching and Queue Flushing
   const handleTranslationAndSpeech = useCallback((text) => {
     if (!text || !text.trim()) return;
 
-    let translated = `[Translated to ${outputLang}]: ${text}`;
+    let translated = text;
     if (outputLang === 'mr-IN') {
       translated = `मराठी रूपांतरित: ${text}`;
     } else if (outputLang === 'hi-IN') {
@@ -184,23 +185,42 @@ function App() {
     saveToDatabase(text, translated);
 
     if (speakerEnabled && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel(); // Clear pending speech queue to prevent freezing
+      window.speechSynthesis.cancel(); // Clear any hung speech queue
 
-      const utterance = new SpeechSynthesisUtterance(translated);
+      const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = outputLang;
-      utterance.rate = 1.0;
+      utterance.rate = 0.95;
       utterance.pitch = 1.0;
+
+      // Assign matching voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const matchedVoice = voices.find(v => v.lang === outputLang || v.lang.startsWith(outputLang.slice(0, 2)));
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+      }
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onerror = (e) => {
+        console.warn('Speech synthesis error:', e);
+        setIsSpeaking(false);
+      };
 
-      utteranceRef.current = utterance; // Prevent garbage collection of utterance object
-      window.speechSynthesis.speak(utterance);
+      utteranceRef.current = utterance;
+      
+      // Small timeout to guarantee browser audio engine is ready
+      setTimeout(() => {
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          console.error('Speech synthesis execution failed:', err);
+          setIsSpeaking(false);
+        }
+      }, 50);
     }
   }, [outputLang, speakerEnabled, saveToDatabase]);
 
-  // Robust Speech Recognition Lifecycle with Debounced Finalization
+  // Robust Speech Recognition Lifecycle with Throttled Restarts & No Freezing
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -243,15 +263,25 @@ function App() {
 
     recognition.onerror = (event) => {
       console.warn('Speech recognition warning/error:', event.error);
+      if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+        setIsListening(false);
+        isListeningRef.current = false;
+        setStatusMsg('Microphone access blocked. Check browser permissions.');
+      }
     };
 
     recognition.onend = () => {
       if (!userStoppedRef.current && isListeningRef.current) {
-        try {
-          recognition.start();
-        } catch (e) {
-          console.log('Safe restart suppressed:', e);
-        }
+        if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
+        restartTimeoutRef.current = setTimeout(() => {
+          if (!userStoppedRef.current && isListeningRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch (e) {
+              console.log('Safe restart suppressed:', e);
+            }
+          }
+        }, 300);
       } else {
         setIsListening(false);
         setStatusMsg('Microphone stopped.');
@@ -260,7 +290,7 @@ function App() {
 
     recognitionRef.current = recognition;
 
-    // Auto-start on load
+    // Auto-start on mount safely
     userStoppedRef.current = false;
     isListeningRef.current = true;
     try {
@@ -274,6 +304,7 @@ function App() {
 
     return () => {
       userStoppedRef.current = true;
+      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
@@ -289,6 +320,7 @@ function App() {
       userStoppedRef.current = true;
       setIsListening(false);
       isListeningRef.current = false;
+      if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
       if (recognitionRef.current) {
         try {
           recognitionRef.current.stop();
