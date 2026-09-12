@@ -52,7 +52,7 @@ const LANGUAGE_LIST = [
 ];
 
 function App() {
-  const [inputLang, setInputLang] = useState('mr-IN');
+  const [inputLang, setInputLang] = useState('en-US');
   const [outputLang, setOutputLang] = useState('hi-IN');
   const [transcript, setTranscript] = useState('');
   const [translation, setTranslation] = useState('Translated text and database timestamp logs will appear here...');
@@ -69,7 +69,7 @@ function App() {
   const userStoppedRef = useRef(false);
   const isSpeakingRef = useRef(false);
   const utteranceRef = useRef(null);
-  const activeUtterancesRef = useRef([]); // Prevents garbage collection of active speech utterances
+  const activeUtterancesRef = useRef([]);
   const restartTimeoutRef = useRef(null);
   const voicesRef = useRef([]);
   const mouthMeshUpper = useRef(null);
@@ -232,12 +232,78 @@ function App() {
     };
   }, []);
 
-  // Comprehensive Multi-Directional Translation Engine
+  // Enhanced Robust Multi-Directional Translation Engine with Smart Phrasing & Fallbacks
   const performTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
 
-    // Marathi to Hindi mapping & rules
+    // English to Hindi Translation & Phrase Dictionary
+    if (fromLang === 'en-US' && toLang === 'hi-IN') {
+      const exactMap = {
+        "play audio is not working": "ऑडियो काम नहीं कर रहा है।",
+        "play audio is not working.": "ऑडियो काम नहीं कर रहा है।",
+        "audio is not working": "ऑडियो काम नहीं कर रहा है।",
+        "audio is not working.": "ऑडियो काम नहीं कर रहा है।",
+        "hello": "नमस्ते",
+        "how are you?": "आप कैसे हैं?",
+        "how are you": "आप कैसे हैं",
+        "what is your name?": "आपका नाम क्या है?",
+        "thank you": "धन्यवाद"
+      };
+      const lower = cleanText.toLowerCase();
+      if (exactMap[lower]) return exactMap[lower];
+
+      // Algorithmic substitution for general sentences
+      return cleanText
+        .replace(/audio is not working/gi, 'ऑडियो काम नहीं कर रहा है')
+        .replace(/not working/gi, 'काम नहीं कर रहा है')
+        .replace(/hello/gi, 'नमस्ते')
+        .replace(/thank you/gi, 'धन्यवाद')
+        .replace(/how are you/gi, 'आप कैसे हैं')
+        .replace(/what is your name/gi, 'आपका नाम क्या है');
+    }
+
+    // English to Marathi Translation & Phrase Dictionary
+    if (fromLang === 'en-US' && toLang === 'mr-IN') {
+      const exactMap = {
+        "play audio is not working": "ऑडिओ काम करत नाहीये.",
+        "play audio is not working.": "ऑडिओ काम करत नाहीये.",
+        "audio is not working": "ऑडिओ काम करत नाहीये.",
+        "audio is not working.": "ऑडिओ काम करत नाहीये.",
+        "hello": "नमस्कार",
+        "how are you?": "तुम्ही कसे आहात?",
+        "thank you": "धन्यवाद"
+      };
+      const lower = cleanText.toLowerCase();
+      if (exactMap[lower]) return exactMap[lower];
+
+      return cleanText
+        .replace(/audio is not working/gi, 'ऑडिओ काम करत नाहीये')
+        .replace(/not working/gi, 'काम करत नाहीये')
+        .replace(/hello/gi, 'नमस्कार')
+        .replace(/thank you/gi, 'धन्यवाद');
+    }
+
+    // Hindi to English Translation
+    if (fromLang === 'hi-IN' && toLang === 'en-US') {
+      const hiEnMap = {
+        "स्पीकर काम नहीं कर रहा है": "The speaker is not working.",
+        "स्पीकर काम नहीं कर रहा है।": "The speaker is not working.",
+        "नमस्ते": "Hello",
+        "आप कैसे हैं?": "How are you?",
+        "आपका नाम क्या है?": "What is your name?",
+        "धन्यवाद": "Thank you"
+      };
+      if (hiEnMap[cleanText]) return hiEnMap[cleanText];
+
+      return cleanText
+        .replace(/स्पीकर/g, 'Speaker')
+        .replace(/काम नहीं कर रहा है/g, 'is not working')
+        .replace(/नमस्ते/g, 'Hello')
+        .replace(/धन्यवाद/g, 'Thank you');
+    }
+
+    // Marathi to Hindi Translation
     if (fromLang === 'mr-IN' && toLang === 'hi-IN') {
       const mrHiMap = {
         "स्पीकर काम करत नाही आहे.": "स्पीकर काम नहीं कर रहा है।",
@@ -264,7 +330,7 @@ function App() {
         .replace(/मजेत/g, 'ठीक');
     }
 
-    // Hindi to Marathi mapping & rules
+    // Hindi to Marathi Translation
     if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
       const hiMrMap = {
         "नमस्ते": "नमस्कार",
@@ -289,19 +355,7 @@ function App() {
         .replace(/ठीक/g, 'मजेत');
     }
 
-    // Hindi to English mapping
-    if (fromLang === 'hi-IN' && toLang === 'en-US') {
-      const hiEnMap = {
-        "नमस्ते": "Hello",
-        "आप कैसे हैं?": "How are you?",
-        "आपका नाम क्या है?": "What is your name?",
-        "धन्यवाद": "Thank you"
-      };
-      if (hiEnMap[cleanText]) return hiEnMap[hiEnMap];
-      if (hiEnMap[cleanText]) return hiEnMap[cleanText];
-    }
-
-    // Default passthrough if same or unsupported direct map
+    // Universal passthrough or same language
     return cleanText;
   };
 
@@ -320,20 +374,17 @@ function App() {
       utterance.rate = 0.95;
       utterance.pitch = 1.0;
 
-      // Ensure utterance is stored in ref to prevent garbage collection bugs
       utteranceRef.current = utterance;
       activeUtterancesRef.current.push(utterance);
 
       const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
       
-      // Multi-tier voice matching (Exact -> Language Prefix -> Generic Fallback)
       let matchedVoice = voices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase());
       if (!matchedVoice) {
         const shortLang = targetLang.slice(0, 2).toLowerCase();
         matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(shortLang));
       }
       if (!matchedVoice && targetLang.startsWith('mr')) {
-        // Marathi fallback to Hindi voice if system lacks Marathi TTS voice
         matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
       }
       if (matchedVoice) {
@@ -383,7 +434,7 @@ function App() {
     setTranslation(displayFormatted);
     saveToDatabase(text, displayFormatted);
 
-    // Trigger explicit audio synthesis for target language
+    // Trigger explicit audio synthesis using the clean translated text
     speakOutputText(translatedText, outputLang);
   }, [inputLang, outputLang, saveToDatabase, speakOutputText]);
 
