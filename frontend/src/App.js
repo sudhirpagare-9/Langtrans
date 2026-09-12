@@ -174,6 +174,11 @@ function App() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   
+  // Enhancement / Settings: Gemini API Key & Dynamic Translation Toggle
+  const [geminiApiKey, setGeminiApiKey] = useState(() => localStorage.getItem('langtrans_gemini_key') || '');
+  const [showSettings, setShowSettings] = useState(false);
+  const [translationMode, setTranslationMode] = useState('hybrid'); // 'hybrid' (Gemini + Fallback) or 'offline'
+
   // Controls: Replay Voice defaults to OFF as requested
   const [autoSpeakOutput, setAutoSpeakOutput] = useState(true);
   const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(false);
@@ -270,6 +275,25 @@ function App() {
     setTranslation('Translated session history will appear here in append mode...');
     setLastRawTranslation('');
     setStatusMsg('Session cleared. Ready for new input.');
+  };
+
+  // Export Session Logs Handler (Enhancement)
+  const handleExportLogs = () => {
+    const exportData = {
+      exportTimestamp: new Date().toISOString(),
+      inputLanguage: inputLang,
+      outputLanguage: outputLang,
+      logs: dbLogs
+    };
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `translation_session_${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
@@ -373,17 +397,14 @@ function App() {
     };
   }, []);
 
-  // Enhanced Intelligent Universal Translation & Accurate Word-to-Word Script Engine
-  const performTranslation = (text, fromLang, toLang) => {
+  // Fallback Translation Engine
+  const performFallbackTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
-
-    // If source and target language are identical
     if (fromLang === toLang) return cleanText;
 
     const lower = cleanText.toLowerCase();
 
-    // 1. English (en-US) to Hindi (hi-IN) Comprehensive Translation & Transliteration
     if (fromLang === 'en-US' && toLang === 'hi-IN') {
       const enHiMap = {
         "hello": "नमस्ते",
@@ -420,7 +441,6 @@ function App() {
         .replace(/is/gi, 'है');
     }
 
-    // 2. English (en-US) to Marathi (mr-IN) Translation
     if (fromLang === 'en-US' && toLang === 'mr-IN') {
       const enMrMap = {
         "hello": "नमस्कार",
@@ -449,17 +469,8 @@ function App() {
         .replace(/is/gi, 'आहे');
     }
 
-    // 3. Hindi (hi-IN) to Marathi (mr-IN) Conversational Mapping
     if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
       const hiMrMap = {
-        "हिंदी टू हिंदी ट्रांसलेट करते": "हिंदी ते हिंदी भाषांतर करत आहे",
-        "ओके यह ठीक से काम कर रहा है": "ओके हे व्यवस्थित काम करत आहे",
-        "क्या हम तेनालीराम देख सकते हैं": "काय आपण तेनालीराम पाहू शकतो का",
-        "देख सकते हैं पढ़ाई होने के बाद": "पाहू शकतो अभ्यास झाल्यानंतर",
-        "अच्छा अभी मैं ट्रांसक्रिप्ट चेज करना चाहता हूँ": "बरं आता मला ट्रान्स्क्रिप्ट बदल करायची आहे",
-        "अभी मैं मराठी लैंग्वेज चूज़ की है अभी आउटपुट बताएं": "आता मी मराठी भाषा निवडली आहे आता आउटपुट सांगा",
-        "पूरी तरह से इसे मराठी में ट्रांसलेट कीजिए": "पूर्णपणे हे मराठीत भाषांतर करा",
-        "मुझे लगता है आप हिंदी और मराठी लैंग्वेज में कन्फ्यूज हो गए हो": "मला वाटते तुम्ही हिंदी आणि मराठी भाषेत कन्फ्यूज झाला आहात",
         "नमस्ते": "नमस्कार",
         "आप कैसे हैं?": "तुम्ही कसे आहात?",
         "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
@@ -473,28 +484,14 @@ function App() {
         .replace(/हिंदी/g, 'हिंदी')
         .replace(/टू/g, 'ते')
         .replace(/ट्रांसलेट/g, 'भाषांतर')
-        .replace(/करते/g, 'करत आहे')
         .replace(/ओके/g, 'ओके')
         .replace(/यह/g, 'हे')
-        .replace(/ठीक से/g, 'व्यवस्थित')
-        .replace(/काम कर रहा है/g, 'काम करत आहे')
-        .replace(/क्या हम/g, 'काय आपण')
-        .replace(/देख सकते हैं/g, 'पाहू शकतो')
-        .replace(/पढ़ाई होने के बाद/g, 'अभ्यास झाल्यानंतर')
-        .replace(/अच्छा/g, 'बरं')
         .replace(/अभी/g, 'आता')
         .replace(/मैं/g, 'मी')
-        .replace(/लैंग्वेज/g, 'भाषा')
-        .replace(/चूज़ की है/g, 'निवडली आहे')
-        .replace(/आउटपुट बताएं/g, 'आउटपुट सांगा')
-        .replace(/पूरी तरह से इसे/g, 'पूर्णपणे हे')
-        .replace(/मुझे लगता है आप/g, 'मला वाटते तुम्ही')
         .replace(/और/g, 'आणि')
-        .replace(/कन्फ्यूज हो गए हो/g, 'कन्फ्यूज झाला आहात')
         .replace(/मेरा/g, 'माझा')
         .replace(/मेरी/g, 'माझी')
         .replace(/मेरे/g, 'माझे')
-        .replace(/हो गया है/g, 'झाला आहे')
         .replace(/मुझे/g, 'मला')
         .replace(/क्या/g, 'काय')
         .replace(/हैं/g, 'आहेत')
@@ -503,7 +500,6 @@ function App() {
         .replace(/नहीं/g, 'नाही');
     }
 
-    // 4. Marathi (mr-IN) to Hindi (hi-IN) Translation
     if (fromLang === 'mr-IN' && toLang === 'hi-IN') {
       const mrHiMap = {
         "नमस्कार": "नमस्ते",
@@ -519,7 +515,6 @@ function App() {
         .replace(/माझा/g, 'मेरा')
         .replace(/माझी/g, 'मेरी')
         .replace(/माझे/g, 'मेरे')
-        .replace(/झाला आहे/g, 'हो गया है')
         .replace(/मला/g, 'मुझे')
         .replace(/काय/g, 'क्या')
         .replace(/आहेत/g, 'हैं')
@@ -529,8 +524,47 @@ function App() {
         .replace(/आणि/g, 'और');
     }
 
-    // 5. Universal Transliteration / Smart Script Mapping for other pairs
     return `[${toLang.slice(0, 2).toUpperCase()}] ${cleanText}`;
+  };
+
+  // Enhanced Universal Translation with Optional Gemini API Live Integration & Offline Fallback
+  const performTranslation = async (text, fromLang, toLang) => {
+    const cleanText = text.trim();
+    if (!cleanText) return '';
+    if (fromLang === toLang) return cleanText;
+
+    // If Gemini API Key is configured and mode is hybrid, call Gemini API
+    if (geminiApiKey && translationMode === 'hybrid') {
+      try {
+        const targetLangObj = LANGUAGE_LIST.find(l => l.code === toLang);
+        const targetLangName = targetLangObj ? targetLangObj.name : toLang;
+        const sourceLangObj = LANGUAGE_LIST.find(l => l.code === fromLang);
+        const sourceLangName = sourceLangObj ? sourceLangObj.name : fromLang;
+
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [{
+                text: `Translate the following text from ${sourceLangName} to ${targetLangName}. Return ONLY the direct translation without any extra formatting, quotes, or conversational preamble.\n\nText: "${cleanText}"`
+              }]
+            }]
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const translated = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+          if (translated) return translated;
+        }
+      } catch (err) {
+        console.warn('Gemini API live translation fallback to offline dictionary:', err);
+      }
+    }
+
+    // Fallback to robust offline dictionary engine
+    return performFallbackTranslation(cleanText, fromLang, toLang);
   };
 
   // Robust Text-to-Speech Output Handler respecting Auto Speak & Replay settings
@@ -540,7 +574,6 @@ function App() {
     try {
       window.speechSynthesis.cancel();
 
-      // Activate speech active/cooldown flag to ignore microphone echo of speaker output
       speechActiveOrCooldownRef.current = true;
       lastSpokenTextRef.current = textToSpeak.trim();
 
@@ -570,7 +603,6 @@ function App() {
         setIsSpeaking(false);
         activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
         
-        // Maintain a 1.5s cooldown after speech finishes to absorb room echo
         if (speechCooldownTimerRef.current) clearTimeout(speechCooldownTimerRef.current);
         speechCooldownTimerRef.current = setTimeout(() => {
           speechActiveOrCooldownRef.current = false;
@@ -601,25 +633,23 @@ function App() {
     }
   }, [autoSpeakOutput]);
 
-  const handleTranslationAndSpeech = useCallback((text) => {
+  const handleTranslationAndSpeech = useCallback(async (text) => {
     if (!text || !text.trim()) return;
 
     const cleanedText = text.trim();
 
-    // Check if the recognized speech is an echo of our own synthesized voice or spoken during cooldown
     if (speechActiveOrCooldownRef.current) {
-      return; // Ignore mic feedback echo completely
+      return; 
     }
 
-    // Check similarity/exact match with last spoken output
     if (lastSpokenTextRef.current && (
       cleanedText.toLowerCase() === lastSpokenTextRef.current.toLowerCase() ||
       lastSpokenTextRef.current.toLowerCase().includes(cleanedText.toLowerCase())
     )) {
-      return; // Filter out self-echo
+      return; 
     }
 
-    const translatedText = performTranslation(cleanedText, inputLang, outputLang);
+    const translatedText = await performTranslation(cleanedText, inputLang, outputLang);
     setLastRawTranslation(translatedText);
 
     const now = new Date();
@@ -634,7 +664,7 @@ function App() {
 
     saveToDatabase(cleanedText, translatedText);
     speakOutputText(translatedText, outputLang);
-  }, [inputLang, outputLang, saveToDatabase, speakOutputText]);
+  }, [inputLang, outputLang, geminiApiKey, translationMode, saveToDatabase, speakOutputText]);
 
   // High-Performance Speech Recognition with Suppressed Console Noise & Dynamic Language switching
   useEffect(() => {
@@ -762,13 +792,51 @@ function App() {
           <span style={{ backgroundColor: '#1e293b', border: '1px solid #475569', padding: '5px 10px', borderRadius: '4px' }}>GDPR / NIST SP 800-53 Compliant</span>
           <span style={{ backgroundColor: '#0284c7', padding: '5px 10px', borderRadius: '4px', fontWeight: 'bold' }}>DB Logs: {dbLogs.length} Saved</span>
           <button 
+            onClick={() => setShowSettings(!showSettings)}
+            style={{ backgroundColor: '#475569', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+          >
+            ⚙️ API Settings
+          </button>
+          <button 
+            onClick={handleExportLogs}
+            style={{ backgroundColor: '#16a34a', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
+          >
+            📥 Export JSON
+          </button>
+          <button 
             onClick={handleClearSession}
             style={{ backgroundColor: '#dc2626', color: '#fff', border: 'none', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold', fontSize: '0.8rem' }}
           >
-            🗑️ Clear / New Session
+            🗑️ Clear / New
           </button>
         </div>
       </header>
+
+      {/* Settings Panel Drawer */}
+      {showSettings && (
+        <div style={{ backgroundColor: '#1e293b', border: '1px solid #475569', borderRadius: '8px', padding: '15px 20px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8' }}>Google Gemini API Configuration (Optional Live Neural Translation)</h3>
+            <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
+          </div>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <input 
+              type="password"
+              placeholder="Paste Gemini API Key (e.g. AIzaSy...)"
+              value={geminiApiKey}
+              onChange={(e) => {
+                setGeminiApiKey(e.target.value);
+                localStorage.setItem('langtrans_gemini_key', e.target.value);
+              }}
+              style={{ flexGrow: 1, padding: '8px 12px', backgroundColor: '#0f172a', color: '#fff', border: '1px solid #475569', borderRadius: '4px', fontSize: '0.85rem', outline: 'none' }}
+            />
+            <span style={{ fontSize: '0.8rem', color: '#4ade80' }}>{geminiApiKey ? '✓ Live Neural API Active' : 'ℹ️ Using Offline Robust Dictionary Fallback'}</span>
+          </div>
+          <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+            Provide your Gemini API key to enable cloud-powered neural translation across all 40+ world and Indian languages. Without a key, the built-in fast offline translation dictionary operates automatically.
+          </div>
+        </div>
+      )}
 
       {/* Database Path Indicator Bar */}
       <div style={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '6px', padding: '8px 15px', marginBottom: '20px', fontSize: '0.8rem', color: '#38bdf8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '5px' }}>
