@@ -1,234 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
-import React, { useState, useEffect, useRef } from 'react';
-import * as THREE from 'three';
 
-export default function VisemeStudio() {
-  // --- States ---
-  const [inputLang, setInputLang] = useState('hi-IN');
-  const [targetLang, setTargetLang] = useState('mr-IN');
-  const [speakerGender, setSpeakerGender] = useState('female');
-  const [outputGender, setOutputGender] = useState('male');
-  const [lipSyncSource, setLipSyncSource] = useState('input'); // 'input' or 'output'
-  const [liveLog, setLiveLog] = useState([]);
-  const [translationLog, setTranslationLog] = useState([]);
-
-  const mountRef = useRef(null);
-  const meshRef = useRef(null);
-
-  // --- 1. Translation Engine (Hindi -> Marathi Fix) ---
-  const translateText = async (text, source = 'hi', target = 'mr') => {
-    try {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${source}&tl=${target}&dt=t&q=${encodeURIComponent(text)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data && data[0]) {
-        return data[0].map(item => item[0]).join('');
-      }
-      return text;
-    } catch (err) {
-      console.error('Translation error:', err);
-      return text;
-    }
-  };
-
-  // --- 2. Robust TTS Engine with Marathi Fallback Fix ---
-  const speakOutput = (text, langCode = 'mr-IN') => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel(); // Stop any pending speech
-
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = langCode;
-
-    const voices = window.speechSynthesis.getVoices();
-    // Search exact target voice (mr-IN), fallback to generic Indian voice (hi-IN) if missing on OS
-    let selectedVoice = voices.find(v => v.lang === langCode || v.lang === langCode.replace('-', '_'));
-    if (!selectedVoice) {
-      selectedVoice = voices.find(v => v.lang.includes('hi-IN') || v.lang.includes('hi') || v.lang.includes('en-IN'));
-    }
-    if (selectedVoice) utterance.voice = selectedVoice;
-
-    // Trigger Viseme Lip-Sync during Output playback if selected
-    utterance.onboundary = (event) => {
-      if (lipSyncSource === 'output') {
-        triggerVisemeFromChar(event.charIndex, text);
-      }
-    };
-
-    window.speechSynthesis.speak(utterance);
-  };
-
-  // --- 3. Realistic 3D Human Lip Renderer (Three.js) ---
-  useEffect(() => {
-    const width = mountRef.current.clientWidth;
-    const height = mountRef.current.clientHeight;
-
-    const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0c0f1d);
-
-    const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.z = 5;
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
-    renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    mountRef.current.appendChild(renderer.domElement);
-
-    // Realistic Lighting Setup
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
-    scene.add(ambientLight);
-
-    const mainLight = new THREE.DirectionalLight(0xffe5d9, 1.2);
-    mainLight.position.set(2, 4, 5);
-    scene.add(mainLight);
-
-    const fillLight = new THREE.DirectionalLight(0xdbe7ff, 0.5);
-    fillLight.position.set(-3, -1, 2);
-    scene.add(fillLight);
-
-    // Realistic Human Lip Mesh Geometry & Physical Material
-    const shape = new THREE.Shape();
-    // Anatomical lip contour outline
-    shape.moveTo(-1.8, 0.0);
-    shape.bezierCurveTo(-1.0, 0.35, -0.4, 0.45, 0.0, 0.25); // Cupids bow
-    shape.bezierCurveTo(0.4, 0.45, 1.0, 0.35, 1.8, 0.0);
-    shape.bezierCurveTo(1.2, -0.7, -1.2, -0.7, -1.8, 0.0);
-
-    const extrudeSettings = {
-      steps: 2,
-      depth: 0.25,
-      bevelEnabled: true,
-      bevelThickness: 0.18,
-      bevelSize: 0.12,
-      bevelSegments: 8
-    };
-
-    const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
-    geometry.center();
-
-    // Physical material mimicking realistic flesh sheen, subsurface scatter & clearcoat gloss
-    const lipMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0xb85055,          // Natural skin-pink lip shade
-      roughness: 0.32,
-      metalness: 0.02,
-      clearcoat: 0.5,           // Subsurface lip gloss look
-      clearcoatRoughness: 0.15,
-      reflectivity: 0.6,
-      sheen: 0.4,
-      sheenColor: 0xffb6c1
-    });
-
-    const mesh = new THREE.Mesh(geometry, lipMaterial);
-    scene.add(mesh);
-    meshRef.current = mesh;
-
-    // Animation Loop
-    let animationId;
-    const animate = () => {
-      animationId = requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    };
-    animate();
-
-    return () => {
-      cancelAnimationFrame(animationId);
-      if (mountRef.current && renderer.domElement) {
-        mountRef.current.removeChild(renderer.domElement);
-      }
-    };
-  }, []);
-
-  // --- 4. Viseme Mapping Animation Trigger ---
-  const triggerVisemeFromChar = (charIndex, text) => {
-    if (!meshRef.current) return;
-    const char = text[charIndex] ? text[charIndex].toLowerCase() : 'a';
-    
-    // Deform lip height/width based on phonetic visual shapes (A, O, E, M/P/B)
-    let scaleY = 1.0;
-    let scaleX = 1.0;
-
-    if (['a', 'आ', 'अ', 'ा'].includes(char)) { scaleY = 1.6; scaleX = 0.9; }
-    else if (['o', 'ओ', 'उ', 'ो'].includes(char)) { scaleY = 1.4; scaleX = 0.7; }
-    else if (['e', 'इ', 'ए', 'े'].includes(char)) { scaleY = 0.7; scaleX = 1.4; }
-    else if (['m', 'b', 'p', 'म', 'ब', 'प'].includes(char)) { scaleY = 0.3; scaleX = 1.0; }
-
-    meshRef.current.scale.set(scaleX, scaleY, 1);
-    setTimeout(() => {
-      if (meshRef.current) meshRef.current.scale.set(1, 1, 1);
-    }, 150);
-  };
-
-  // --- 5. STT Handler with Translation Pipeline ---
-  const handleSpeechResult = async (rawHindiText) => {
-    const timestamp = new Date().toLocaleTimeString();
-    
-    // Add to input log
-    const inputEntry = `[${timestamp}] (hi-IN - ${speakerGender}): ${rawHindiText}`;
-    setLiveLog(prev => [...prev, inputEntry]);
-
-    // Animate lips if set to Input mode
-    if (lipSyncSource === 'input') {
-      triggerVisemeFromChar(0, rawHindiText);
-    }
-
-    // Execute Translation to Marathi
-    const translatedMarathi = await translateText(rawHindiText, 'hi', 'mr');
-
-    // Add to output log
-    const outputEntry = `[${timestamp}] (mr-IN - ${outputGender}): ${translatedMarathi}`;
-    setTranslationLog(prev => [...prev, outputEntry]);
-
-    // Speak audio output
-    speakOutput(translatedMarathi, 'mr-IN');
-  };
-
-  return (
-    <div style={{ display: 'flex', gap: '20px', padding: '20px', background: '#090d16', color: '#fff' }}>
-      {/* Speech Input Panel */}
-      <div style={{ flex: 1, background: '#121826', padding: '15px', borderRadius: '8px' }}>
-        <h3>1. Speech Input Panel</h3>
-        <button onClick={() => handleSpeechResult("आप क्या सुनना पसंद करेंगे गाना या संगीत")}>
-          Simulate Input Speech (Hindi)
-        </button>
-        <div style={{ marginTop: '10px', height: '200px', overflowY: 'auto', fontSize: '12px' }}>
-          {liveLog.map((log, i) => <div key={i}>{log}</div>)}
-        </div>
-      </div>
-
-      {/* 3D Lip-Sync Panel */}
-      <div style={{ flex: 1, background: '#121826', padding: '15px', borderRadius: '8px' }}>
-        <h3>2. 3D Lip-Sync Viseme Studio</h3>
-
-        {/* New Feature: Lip Sync Source Selector for Deaf / Hard-of-Hearing Accessibility */}
-        <div style={{ marginBottom: '10px', background: '#1c2536', padding: '8px', borderRadius: '6px' }}>
-          <label style={{ marginRight: '10px', fontSize: '13px' }}>Lip-Sync Source Target:</label>
-          <button 
-            style={{ background: lipSyncSource === 'input' ? '#2563eb' : '#374151', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer', marginRight: '5px' }}
-            onClick={() => setLipSyncSource('input')}
-          >
-            🎤 Input (Hindi)
-          </button>
-          <button 
-            style={{ background: lipSyncSource === 'output' ? '#2563eb' : '#374151', color: '#fff', border: 'none', padding: '4px 8px', borderRadius: '4px', cursor: 'pointer' }}
-            onClick={() => setLipSyncSource('output')}
-          >
-            🔊 Output (Marathi)
-          </button>
-        </div>
-
-        <div ref={mountRef} style={{ width: '100%', height: '300px', borderRadius: '6px' }} />
-      </div>
-
-      {/* Translation Output Panel */}
-      <div style={{ flex: 1, background: '#121826', padding: '15px', borderRadius: '8px' }}>
-        <h3>3. Translation Output Panel</h3>
-        <div style={{ marginTop: '10px', height: '200px', overflowY: 'auto', fontSize: '12px' }}>
-          {translationLog.map((log, i) => <div key={i}>{log}</div>)}
-        </div>
-      </div>
-    </div>
-  );
-}
 const LANGUAGE_LIST = [
   { code: 'hi-IN', name: 'Hindi - हिन्दी (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
   { code: 'mr-IN', name: 'Marathi - मराठी (India)', group: 'Top Indian Languages', sttSupported: true, ttsStreamSupported: true },
@@ -280,7 +52,7 @@ const getGenderFilteredVoice = (voices, langCode, gender) => {
   if (langMatchVoices.length === 0) return null;
 
   const maleKeywords = ['male', 'david', 'george', 'mark', 'ravi', 'hemant', 'guy', 'stefan', 'pablo', 'google us english male'];
-  const femaleKeywords = ['female', 'zira', 'hazel', 'heera', 'susan', 'catherine', 'zira', 'aria', 'jenny', 'google हिन्दी'];
+  const femaleKeywords = ['female', 'zira', 'hazel', 'heera', 'susan', 'catherine', 'aria', 'jenny', 'google हिन्दी'];
 
   const keywords = gender === 'male' ? maleKeywords : femaleKeywords;
   const matched = langMatchVoices.find(v => keywords.some(kw => v.name.toLowerCase().includes(kw)));
@@ -478,7 +250,7 @@ function SearchableLanguageDropdown({ selectedLang, onSelectLang, label }) {
   );
 }
 
-function App() {
+export default function App() {
   const [inputLang, setInputLang] = useState('hi-IN');
   const [outputLang, setOutputLang] = useState('mr-IN');
   const [inputGender, setInputGender] = useState('female');
@@ -917,7 +689,7 @@ function App() {
     });
   }, []);
 
-  // Fixed & Enhanced Multi-Tier Gender-Aware Speech Synthesis
+  // Multi-Tier Gender-Aware Speech Synthesis
   const speakOutputText = useCallback(async (textToSpeak, targetLang, gender = outputGenderRef.current) => {
     if (!textToSpeak || !textToSpeak.trim()) return;
     const cleanText = textToSpeak.trim();
@@ -991,7 +763,7 @@ function App() {
     }
   }, [performTranslation, saveToDatabase, speakOutputText]);
 
-  // Robust Auto-Healing Speech Recognition (Fixes "Mic Interrupted" issue)
+  // Continuous Auto-Healing Speech Recognition
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -1029,7 +801,6 @@ function App() {
       }
     };
 
-    // Auto-heal mic errors without halting user session
     recognition.onerror = (event) => {
       console.warn('Speech recognition status notification:', event.error);
       if (!userStoppedRef.current && isListeningRef.current) {
@@ -1075,7 +846,6 @@ function App() {
   }, [inputLang, handleTranslationAndSpeech]);
 
   const toggleMic = () => {
-    // Resume web speech engine context on direct user interaction
     if ('speechSynthesis' in window) {
       window.speechSynthesis.resume();
     }
@@ -1492,5 +1262,3 @@ function App() {
     </div>
   );
 }
-
-export default App;
