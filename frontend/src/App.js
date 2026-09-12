@@ -5,17 +5,30 @@ function App() {
   const [inputLang, setInputLang] = useState('hi-IN');
   const [outputLang, setOutputLang] = useState('mr-IN');
   const [transcript, setTranscript] = useState('');
-  const [translation, setTranslation] = useState('Translated text and auto-saved database timestamp logs will appear here...');
+  const [translation, setTranslation] = useState('Translated text and database timestamp logs will appear here...');
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [speakerEnabled, setSpeakerEnabled] = useState(true);
   const [dbLogs, setDbLogs] = useState([]);
-  const [statusMsg, setStatusMsg] = useState('Initializing Secure AI Translator & 3D Studio...');
+  const [statusMsg, setStatusMsg] = useState('Ready. Initializing live microphone & 3D Studio...');
 
   const mountRef = useRef(null);
   const recognitionRef = useRef(null);
+  const isListeningRef = useRef(false);
+  const isSpeakingRef = useRef(false);
   const mouthMeshUpper = useRef(null);
   const mouthMeshLower = useRef(null);
 
-  // Load existing database logs on mount
+  // Keep refs synchronized with state
+  useEffect(() => {
+    isListeningRef.current = isListening;
+  }, [isListening]);
+
+  useEffect(() => {
+    isSpeakingRef.current = isSpeaking;
+  }, [isSpeaking]);
+
+  // Load database logs on mount
   useEffect(() => {
     const savedLogs = JSON.parse(localStorage.getItem('langtrans_db_logs') || '[]');
     setDbLogs(savedLogs);
@@ -39,7 +52,7 @@ function App() {
     });
   }, [inputLang, outputLang]);
 
-  // Setup Three.js Realistic 3D Lips Scene
+  // Setup Three.js Realistic 3D Lips Scene with Viseme Sync
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
@@ -55,7 +68,7 @@ function App() {
     renderer.shadowMap.enabled = true;
     currentMount.appendChild(renderer.domElement);
 
-    // Lighting for Realistic Glossy Lip Look
+    // Lighting for Glossy Fleshy Lip Appearance
     const ambientLight = new THREE.AmbientLight(0xfff0f5, 1.2);
     scene.add(ambientLight);
 
@@ -63,7 +76,7 @@ function App() {
     dirLight1.position.set(2, 4, 5);
     scene.add(dirLight1);
 
-    // Realistic Lip Material (Glossy Fleshy Pink)
+    // Realistic Glossy Lip Material
     const lipMaterial = new THREE.MeshPhysicalMaterial({
       color: 0xd97c88,
       roughness: 0.25,
@@ -74,7 +87,7 @@ function App() {
       reflectivity: 0.9
     });
 
-    // Create Anatomical 3D Lips (Upper & Lower with Cupid's Bow curve)
+    // Anatomical 3D Lips with Cupid's Bow Curve
     const upperShape = new THREE.Shape();
     upperShape.moveTo(-1.6, 0);
     upperShape.quadraticCurveTo(-0.8, 0.8, 0, 0.2);
@@ -104,16 +117,26 @@ function App() {
     mouthMeshLower.current = lowerLip;
 
     let animationFrameId;
-    let clock = new THREE.Clock();
+    const clock = new THREE.Clock();
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
       if (upperLip && lowerLip) {
-        const speakFactor = isListening ? Math.sin(elapsedTime * 15) * 0.15 : Math.sin(elapsedTime * 2) * 0.03;
-        upperLip.position.y = 0.3 + speakFactor;
-        lowerLip.position.y = -0.3 - speakFactor;
+        let speakFactor = 0;
+        if (isSpeakingRef.current) {
+          // Dynamic lip movement synchronized with speech output voice
+          speakFactor = Math.sin(elapsedTime * 30) * 0.24 + Math.cos(elapsedTime * 20) * 0.12;
+        } else if (isListeningRef.current) {
+          // Subtle listening idle movement
+          speakFactor = Math.sin(elapsedTime * 8) * 0.05;
+        } else {
+          // Rest position
+          speakFactor = Math.sin(elapsedTime * 2) * 0.02;
+        }
+        upperLip.position.y = 0.3 + (speakFactor * 0.6);
+        lowerLip.position.y = -0.3 - (speakFactor * 0.8);
       }
 
       renderer.render(scene, camera);
@@ -135,7 +158,7 @@ function App() {
         currentMount.innerHTML = '';
       }
     };
-  }, [isListening]);
+  }, []);
 
   const handleTranslationAndSpeech = useCallback((text) => {
     let translated = `[Translated to ${outputLang}]: ${text}`;
@@ -150,13 +173,18 @@ function App() {
     setTranslation(translated);
     saveToDatabase(text, translated);
 
-    if ('speechSynthesis' in window) {
+    if (speakerEnabled && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(translated);
       utterance.lang = outputLang;
+      
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
       window.speechSynthesis.speak(utterance);
     }
-  }, [outputLang, saveToDatabase]);
+  }, [outputLang, speakerEnabled, saveToDatabase]);
 
   // Speech Recognition & Auto-Start on Load
   useEffect(() => {
@@ -199,21 +227,25 @@ function App() {
     };
 
     recognition.onend = () => {
-      if (isListening) {
+      if (isListeningRef.current) {
         try {
           recognition.start();
         } catch (e) {
           console.log(e);
         }
+      } else {
+        setIsListening(false);
+        setStatusMsg('Microphone stopped.');
       }
     };
 
     recognitionRef.current = recognition;
 
+    // Auto-start on load
     try {
       recognition.start();
     } catch (e) {
-      console.log('Auto-start prevented by browser policy, click Start Mic.');
+      console.log('Auto-start blocked by browser policy, click Start Mic.');
     }
 
     return () => {
@@ -221,14 +253,23 @@ function App() {
         recognitionRef.current.stop();
       }
     };
-  }, [inputLang, handleTranslationAndSpeech, isListening]);
+  }, [inputLang, handleTranslationAndSpeech]);
 
   const toggleMic = () => {
     if (isListening) {
       setIsListening(false);
-      if (recognitionRef.current) recognitionRef.current.stop();
-      setStatusMsg('Microphone manually stopped.');
+      isListeningRef.current = false;
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch (e) {
+          console.log(e);
+        }
+      }
+      setStatusMsg('Microphone stopped.');
     } else {
+      setIsListening(true);
+      isListeningRef.current = true;
       if (recognitionRef.current) {
         try {
           recognitionRef.current.start();
@@ -236,6 +277,13 @@ function App() {
           console.log(e);
         }
       }
+      setStatusMsg('🎙️ Microphone active & listening live...');
+    }
+  };
+
+  const manualTranslateAndSync = () => {
+    if (transcript) {
+      handleTranslationAndSpeech(transcript);
     }
   };
 
@@ -253,6 +301,7 @@ function App() {
       </header>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        {/* Left Column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
           <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
             <h3 style={{ marginTop: 0, fontSize: '1rem', color: '#38bdf8' }}>1. Speech Input & Language Configuration</h3>
@@ -288,24 +337,40 @@ function App() {
               value={transcript} 
               onChange={(e) => setTranscript(e.target.value)} 
               placeholder="Live voice transcript appears here automatically..." 
-              style={{ width: '100%', height: '90px', backgroundColor: '#0f172a', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px', padding: '8px', boxSizing: 'border-box', marginTop: '5px' }}
+              style={{ width: '100%', height: '80px', backgroundColor: '#0f172a', color: '#f8fafc', border: '1px solid #475569', borderRadius: '4px', padding: '8px', boxSizing: 'border-box', marginTop: '5px', marginBottom: '10px' }}
             />
+
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button onClick={manualTranslateAndSync} style={{ flex: 1, backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '8px', borderRadius: '4px', cursor: 'pointer', fontWeight: 'bold' }}>
+                ⚡ Translate & Sync
+              </button>
+            </div>
           </div>
 
           <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
-            <h3 style={{ marginTop: 0, fontSize: '1rem', color: '#38bdf8' }}>3. Translation Output & Database Feed</h3>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+              <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8' }}>3. Translation Output & Database Feed</h3>
+              <button 
+                onClick={() => setSpeakerEnabled(!speakerEnabled)} 
+                title={speakerEnabled ? "Speaker Voice On" : "Speaker Voice Muted"}
+                style={{ backgroundColor: speakerEnabled ? '#0369a1' : '#475569', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+              >
+                {speakerEnabled ? '🔊 Speaker On' : '🔇 Muted'}
+              </button>
+            </div>
             <div style={{ backgroundColor: '#0f172a', padding: '10px', borderRadius: '4px', border: '1px solid #334155', minHeight: '60px', fontSize: '0.95rem' }}>
               {translation}
             </div>
           </div>
         </div>
 
+        {/* Right Column: 3D Viewport */}
         <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8' }}>2. PWD 3D Human Lips & Viseme Viewport</h3>
             <span style={{ fontSize: '0.75rem', backgroundColor: '#0f172a', padding: '3px 8px', borderRadius: '4px', border: '1px solid #475569' }}>WebGL Accelerated</span>
           </div>
-          <div ref={mountRef} style={{ width: '1000px', height: '350px', backgroundColor: '#000', borderRadius: '6px', overflow: 'hidden', flexGrow: 1 }} />
+          <div ref={mountRef} style={{ width: '100%', height: '380px', backgroundColor: '#000', borderRadius: '6px', overflow: 'hidden', flexGrow: 1 }} />
           <div style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '10px', textAlign: 'center' }}>
             Powered by Google Gemini API & Three.js WebGL Engine • Auto-Saved Unicode Database Logs Active (UTC & Local Timestamps)
           </div>
