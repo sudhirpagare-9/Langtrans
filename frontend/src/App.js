@@ -172,7 +172,6 @@ function App() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Mic Sensitivity Controls (0 - 100) & Audio Visualizer State
   const [micSensitivity, setMicSensitivity] = useState(75);
   const [audioLevel, setAudioLevel] = useState(0);
 
@@ -183,14 +182,14 @@ function App() {
   const [replayVoiceEnabled, setReplayVoiceEnabled] = useState(true);
 
   const [dbLogs, setDbLogs] = useState([]);
-  const [statusMsg, setStatusMsg] = useState('Ready. High-Performance Neural Speech engine online.');
+  const [statusMsg, setStatusMsg] = useState('Ready. High-Performance Speech & Viseme engine active.');
 
   const mountRef = useRef(null);
   const recognitionRef = useRef(null);
   const isListeningRef = useRef(false);
   const userStoppedRef = useRef(false);
   const isSpeakingRef = useRef(false);
-  const activeUtterancesRef = useRef([]);
+  const currentAudioRef = useRef(null);
   const restartTimeoutRef = useRef(null);
   const voicesRef = useRef([]);
   const mouthMeshUpper = useRef(null);
@@ -204,7 +203,6 @@ function App() {
   const animFrameRef = useRef(null);
 
   const lastSpokenTextRef = useRef('');
-  const speechActiveOrCooldownRef = useRef(false);
 
   useEffect(() => {
     isListeningRef.current = isListening;
@@ -226,7 +224,7 @@ function App() {
     }
   }, [translation]);
 
-  // Mic Level Meter and Sensitivity Controller
+  // Audio Level Visualizer & Mic Gain Handler
   useEffect(() => {
     const initAudioMeter = async () => {
       try {
@@ -292,6 +290,7 @@ function App() {
     };
   }, [isListening, micSensitivity]);
 
+  // Web Speech Voices Auto-Loader
   useEffect(() => {
     const updateVoices = () => {
       if ('speechSynthesis' in window) {
@@ -361,7 +360,7 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Three.js 3D Viseme Mouth Mesh Setup
+  // Three.js 3D Lip Viseme Rendering Engine
   useEffect(() => {
     const currentMount = mountRef.current;
     if (!currentMount) return;
@@ -434,7 +433,7 @@ function App() {
       if (upperLip && lowerLip) {
         let speakFactor = 0;
         if (isSpeakingRef.current) {
-          speakFactor = Math.sin(elapsedTime * 35) * 0.3 + Math.cos(elapsedTime * 22) * 0.15;
+          speakFactor = Math.sin(elapsedTime * 35) * 0.35 + Math.cos(elapsedTime * 22) * 0.18;
         } else if (isListeningRef.current) {
           speakFactor = Math.sin(elapsedTime * 8) * 0.05;
         } else {
@@ -465,7 +464,7 @@ function App() {
     };
   }, []);
 
-  // Multi-Tier Free AI Neural Translation Engine (No Mock Data / No [MR] Bug)
+  // Neural Translation Engine Pipeline
   const performTranslation = useCallback(async (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
@@ -474,7 +473,7 @@ function App() {
     const sourceIso = fromLang.split('-')[0];
     const targetIso = toLang.split('-')[0];
 
-    // Tier 1: Gemini API (If User API Key Present)
+    // Tier 1: Gemini API Engine (If API Key provided)
     if (geminiApiKey) {
       try {
         const targetLangObj = LANGUAGE_LIST.find(l => l.code === toLang);
@@ -488,7 +487,7 @@ function App() {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `Translate accurately from ${sourceLangName} to ${targetLangName}. Return ONLY the final clean translation text without quotes or preamble.\n\nText: "${cleanText}"`
+                text: `Translate accurately from ${sourceLangName} to ${targetLangName}. Return ONLY the clean final translated script without quotes or prefix.\n\nText: "${cleanText}"`
               }]
             }]
           })
@@ -504,7 +503,7 @@ function App() {
       }
     }
 
-    // Tier 2: Free Public Neural Translate Engine (No Key Required, High Accuracy)
+    // Tier 2: Free Neural GTX Engine
     try {
       const gtxUrl = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceIso}&tl=${targetIso}&dt=t&q=${encodeURIComponent(cleanText)}`;
       const res = await fetch(gtxUrl);
@@ -516,10 +515,10 @@ function App() {
         }
       }
     } catch (e) {
-      console.warn('Neural GTX engine fallback:', e);
+      console.warn('GTX translation fallback:', e);
     }
 
-    // Tier 3: MyMemory AI Open API (No Key Required)
+    // Tier 3: MyMemory Open AI Engine
     try {
       const mmUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${sourceIso}|${targetIso}`;
       const res = await fetch(mmUrl);
@@ -530,60 +529,107 @@ function App() {
         }
       }
     } catch (e) {
-      console.warn('MyMemory engine fallback:', e);
+      console.warn('MyMemory translation fallback:', e);
     }
 
     return cleanText;
   }, [geminiApiKey]);
 
-  const speakOutputText = useCallback((textToSpeak, targetLang) => {
-    if (!autoSpeakOutput || !('speechSynthesis' in window) || !textToSpeak) return;
+  // Online HD Neural Audio Stream Fallback Engine (Guarantees authentic voice for Marathi / all languages)
+  const playOnlineTTSStream = useCallback((text, langCode) => {
+    return new Promise((resolve) => {
+      try {
+        if (currentAudioRef.current) {
+          currentAudioRef.current.pause();
+          currentAudioRef.current = null;
+        }
+
+        const iso = langCode.split('-')[0];
+        const ttsUrl = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=${iso}&client=tw-ob`;
+        const audio = new Audio(ttsUrl);
+        currentAudioRef.current = audio;
+
+        audio.onplay = () => {
+          setIsSpeaking(true);
+        };
+
+        audio.onended = () => {
+          setIsSpeaking(false);
+          currentAudioRef.current = null;
+          resolve(true);
+        };
+
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          currentAudioRef.current = null;
+          resolve(false);
+        };
+
+        audio.play().catch(() => {
+          setIsSpeaking(false);
+          resolve(false);
+        });
+      } catch (e) {
+        setIsSpeaking(false);
+        resolve(false);
+      }
+    });
+  }, []);
+
+  // Dual-Tier Hybrid Speech Synthesis (Native Web Speech + HD Stream Backup)
+  const speakOutputText = useCallback(async (textToSpeak, targetLang) => {
+    if (!textToSpeak || !textToSpeak.trim()) return;
+    const cleanText = textToSpeak.trim();
+    lastSpokenTextRef.current = cleanText;
+
+    // Standard Fallback via Online HD Audio Stream if SpeechSynthesis is unavailable
+    if (!('speechSynthesis' in window)) {
+      await playOnlineTTSStream(cleanText, targetLang);
+      return;
+    }
 
     try {
       window.speechSynthesis.cancel();
-      speechActiveOrCooldownRef.current = true;
-      lastSpokenTextRef.current = textToSpeak.trim();
-
-      const utterance = new SpeechSynthesisUtterance(textToSpeak);
-      utterance.lang = targetLang;
-      utterance.rate = 0.95;
-
-      activeUtterancesRef.current.push(utterance);
+      window.speechSynthesis.resume();
 
       const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
-      let matchedVoice = voices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase());
-      if (!matchedVoice) {
-        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(targetLang.slice(0, 2).toLowerCase()));
+      const targetIso = targetLang.split('-')[0].toLowerCase();
+
+      // Look for exact locale match or language match (e.g., mr-IN or mr)
+      let matchedVoice = voices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase() || v.lang.toLowerCase().startsWith(targetIso));
+
+      // Devanagari script compatibility fallback for Marathi/Hindi
+      if (!matchedVoice && (targetIso === 'mr' || targetIso === 'hi' || targetIso === 'bho' || targetIso === 'ne' || targetIso === 'sa')) {
+        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
       }
+
       if (matchedVoice) {
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = matchedVoice.lang;
         utterance.voice = matchedVoice;
+        utterance.rate = 0.92;
+
+        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = async () => {
+          setIsSpeaking(false);
+          await playOnlineTTSStream(cleanText, targetLang);
+        };
+
+        window.speechSynthesis.speak(utterance);
+      } else {
+        // If no compatible client OS voice exists, use high-definition online voice stream
+        await playOnlineTTSStream(cleanText, targetLang);
       }
-
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
-        setTimeout(() => { speechActiveOrCooldownRef.current = false; }, 1200);
-      };
-      utterance.onerror = () => {
-        setIsSpeaking(false);
-        speechActiveOrCooldownRef.current = false;
-      };
-
-      setTimeout(() => {
-        try { window.speechSynthesis.speak(utterance); } catch (e) { setIsSpeaking(false); }
-      }, 100);
     } catch (err) {
-      setIsSpeaking(false);
+      console.warn('Native speech synthesis exception, playing streaming audio:', err);
+      await playOnlineTTSStream(cleanText, targetLang);
     }
-  }, [autoSpeakOutput]);
+  }, [playOnlineTTSStream]);
 
   const handleTranslationAndSpeech = useCallback(async (text) => {
     if (!text || !text.trim()) return;
     const cleanedText = text.trim();
-
-    if (speechActiveOrCooldownRef.current) return;
-    if (lastSpokenTextRef.current && lastSpokenTextRef.current.toLowerCase() === cleanedText.toLowerCase()) return;
 
     const translatedText = await performTranslation(cleanedText, inputLang, outputLang);
     setLastRawTranslation(translatedText);
@@ -599,8 +645,11 @@ function App() {
     setTranslation(prev => prev && !prev.includes('Translated session history') ? `${prev}\n${formattedOutputEntry}` : formattedOutputEntry);
 
     saveToDatabase(cleanedText, translatedText);
-    speakOutputText(translatedText, outputLang);
-  }, [inputLang, outputLang, performTranslation, saveToDatabase, speakOutputText]);
+
+    if (autoSpeakOutput) {
+      speakOutputText(translatedText, outputLang);
+    }
+  }, [inputLang, outputLang, autoSpeakOutput, performTranslation, saveToDatabase, speakOutputText]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -704,7 +753,7 @@ function App() {
       overflow: 'hidden'
     }}>
       
-      {/* Top Header Bar */}
+      {/* Top Bar Header */}
       <header style={{ 
         display: 'flex', 
         justifyContent: 'space-between', 
@@ -736,7 +785,7 @@ function App() {
           </div>
         </div>
 
-        {/* Global Control Bar */}
+        {/* Global Toolbar Buttons */}
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <span style={{ backgroundColor: 'rgba(6, 182, 212, 0.15)', color: '#38bdf8', border: '1px solid #0284c7', padding: '5px 10px', borderRadius: '6px', fontWeight: '700', fontSize: '0.75rem' }}>
             💾 Storage Logs: {dbLogs.length}
@@ -753,7 +802,7 @@ function App() {
         </div>
       </header>
 
-      {/* Gemini Settings Drawer */}
+      {/* Gemini Settings Bar */}
       {showSettings && (
         <div style={{ backgroundColor: '#0f172a', border: '1px solid #38bdf8', borderRadius: '8px', padding: '10px 14px', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <span style={{ fontSize: '0.8rem', color: '#38bdf8', fontWeight: '700' }}>Gemini API Key:</span>
@@ -771,7 +820,7 @@ function App() {
         </div>
       )}
 
-      {/* Mic Sensitivity Meter & Gain Control Slider Strip */}
+      {/* Mic Gain Sensitivity & Audio Visualizer Bar */}
       <div style={{ 
         backgroundColor: '#0f172a', 
         border: '1px solid #1e293b', 
@@ -799,7 +848,6 @@ function App() {
           />
         </div>
 
-        {/* Real-time Mic Audio Level Visualizer */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: '180px' }}>
           <span style={{ fontSize: '0.72rem', color: '#94a3b8', fontWeight: '600' }}>Live Meter:</span>
           <div style={{ flexGrow: 1, height: '10px', backgroundColor: '#1e293b', borderRadius: '5px', overflow: 'hidden', border: '1px solid #334155' }}>
@@ -814,7 +862,7 @@ function App() {
         </div>
       </div>
 
-      {/* Main 3-Column Display Layout */}
+      {/* Main 3-Panel Layout Grid */}
       <div style={{ 
         display: 'grid', 
         gridTemplateColumns: '1fr 1.1fr 1fr', 
@@ -823,7 +871,7 @@ function App() {
         overflow: 'hidden' 
       }}>
         
-        {/* PANEL 1: Speech Input & Mic */}
+        {/* PANEL 1: Mic & Speech Input */}
         <div style={{ 
           backgroundColor: '#0f172a', 
           padding: '14px', 
@@ -888,7 +936,7 @@ function App() {
           </div>
         </div>
 
-        {/* PANEL 2: 3D Viseme Mouth Mesh Studio */}
+        {/* PANEL 2: 3D Lip-Sync Viseme Mesh */}
         <div style={{ 
           backgroundColor: '#0f172a', 
           padding: '14px', 
@@ -910,7 +958,7 @@ function App() {
           </div>
         </div>
 
-        {/* PANEL 3: Output & Controls */}
+        {/* PANEL 3: Translation Output & Voice Synthesis Controls */}
         <div style={{ 
           backgroundColor: '#0f172a', 
           padding: '14px', 
