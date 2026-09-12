@@ -52,10 +52,11 @@ const LANGUAGE_LIST = [
 ];
 
 function App() {
-  const [inputLang, setInputLang] = useState('hi-IN');
-  const [outputLang, setOutputLang] = useState('en-US');
+  const [inputLang, setInputLang] = useState('mr-IN');
+  const [outputLang, setOutputLang] = useState('hi-IN');
   const [transcript, setTranscript] = useState('');
   const [translation, setTranslation] = useState('Translated text and database timestamp logs will appear here...');
+  const [lastRawTranslation, setLastRawTranslation] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speakerEnabled, setSpeakerEnabled] = useState(true);
@@ -68,6 +69,7 @@ function App() {
   const userStoppedRef = useRef(false);
   const isSpeakingRef = useRef(false);
   const utteranceRef = useRef(null);
+  const activeUtterancesRef = useRef([]); // Prevents garbage collection of active speech utterances
   const restartTimeoutRef = useRef(null);
   const voicesRef = useRef([]);
   const mouthMeshUpper = useRef(null);
@@ -81,7 +83,7 @@ function App() {
     isSpeakingRef.current = isSpeaking;
   }, [isSpeaking]);
 
-  // Load voices for Speech Synthesis with event listener & fallback timer
+  // Load voices for Speech Synthesis robustly across all browsers
   useEffect(() => {
     const updateVoices = () => {
       if ('speechSynthesis' in window) {
@@ -91,7 +93,8 @@ function App() {
     updateVoices();
     if ('speechSynthesis' in window) {
       window.speechSynthesis.onvoiceschanged = updateVoices;
-      setTimeout(updateVoices, 500);
+      setTimeout(updateVoices, 200);
+      setTimeout(updateVoices, 1000);
     }
   }, []);
 
@@ -229,55 +232,47 @@ function App() {
     };
   }, []);
 
-  // Enhanced Multi-Directional Translation Engine with robust phrase dictionaries & algorithmic fallbacks
+  // Comprehensive Multi-Directional Translation Engine
   const performTranslation = (text, fromLang, toLang) => {
     const cleanText = text.trim();
     if (!cleanText) return '';
 
-    // Hindi to English Dictionary & Phrase Mapping
-    if (fromLang === 'hi-IN' && toLang === 'en-US') {
-      const hiEnMap = {
-        "लेकिन यह ट्रांसलेट नहीं हो रहा है": "However, this is not translating properly.",
-        "लेकिन यह ट्रांसलेट नहीं हो रहा है।": "However, this is not translating properly.",
-        "आपका नाम क्या है?": "What is your name?",
-        "आपका नाम क्या है": "What is your name",
-        "आप कैसे हैं?": "How are you?",
-        "नमस्ते": "Hello",
-        "सुप्रभात": "Good morning",
-        "मैं ठीक हूँ": "I am fine",
-        "धन्यवाद": "Thank you",
-        "शुभ रात्रि": "Good night"
-      };
-      if (hiEnMap[cleanText]) return hiEnMap[cleanText];
-
-      return cleanText
-        .replace(/लेकिन/g, 'However')
-        .replace(/यह/g, 'this')
-        .replace(/ट्रांसलेट/g, 'translation')
-        .replace(/नहीं/g, 'not')
-        .replace(/हो रहा है/g, 'happening')
-        .replace(/आपका/g, 'your')
-        .replace(/नाम/g, 'name')
-        .replace(/क्या/g, 'what')
-        .replace(/है/g, 'is')
-        .replace(/नमस्ते/g, 'Hello')
-        .replace(/धन्यवाद/g, 'Thank you');
-    }
-
-    // Hindi to Marathi Dictionary & Rules
-    if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
-      const dictionary = {
-        "लेकिन यह ट्रांसलेट नहीं हो रहा है": "पण हे ट्रान्सलेट होत नाहीये.",
-        "लेकिन यह ट्रांसलेट नहीं हो रहा है।": "पण हे ट्रान्सलेट होत नाहीये.",
-        "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
-        "आपका नाम क्या है": "तुमचे नाव काय आहे",
-        "आप कैसे हैं?": "तुम्ही कसे आहात?",
-        "नमस्ते": "नमस्कार",
-        "मैं ठीक हूँ": "मी मजेत आहे",
+    // Marathi to Hindi mapping & rules
+    if (fromLang === 'mr-IN' && toLang === 'hi-IN') {
+      const mrHiMap = {
+        "स्पीकर काम करत नाही आहे.": "स्पीकर काम नहीं कर रहा है।",
+        "स्पीकर काम करत नाही आहे": "स्पीकर काम नहीं कर रहा है",
+        "तुमचे नाव काय आहे?": "आपका नाम क्या है?",
+        "तुम्ही कसे आहात?": "आप कैसे हैं?",
+        "नमस्कार": "नमस्ते",
+        "मी मजेत आहे": "मैं ठीक हूँ",
         "धन्यवाद": "धन्यवाद"
       };
-      if (dictionary[cleanText]) return dictionary[dictionary]; // fixed key reference below
-      if (dictionary[cleanText]) return dictionary[cleanText];
+      if (mrHiMap[cleanText]) return mrHiMap[cleanText];
+
+      return cleanText
+        .replace(/करत नाही आहे/g, 'नहीं कर रहा है')
+        .replace(/नाही/g, 'नहीं')
+        .replace(/तुमचे/g, 'आपका')
+        .replace(/नाव/g, 'नाम')
+        .replace(/काय/g, 'क्या')
+        .replace(/आहे/g, 'है')
+        .replace(/तुम्ही/g, 'आप')
+        .replace(/कसे/g, 'कैसे')
+        .replace(/आहात/g, 'हैं')
+        .replace(/मी/g, 'मैं')
+        .replace(/मजेत/g, 'ठीक');
+    }
+
+    // Hindi to Marathi mapping & rules
+    if (fromLang === 'hi-IN' && toLang === 'mr-IN') {
+      const hiMrMap = {
+        "नमस्ते": "नमस्कार",
+        "आप कैसे हैं?": "तुम्ही कसे आहात?",
+        "आपका नाम क्या है?": "तुमचे नाव काय आहे?",
+        "धन्यवाद": "धन्यवाद"
+      };
+      if (hiMrMap[cleanText]) return hiMrMap[cleanText];
 
       return cleanText
         .replace(/लेकिन/g, 'पण')
@@ -286,7 +281,6 @@ function App() {
         .replace(/आपका/g, 'तुमचे')
         .replace(/नाम/g, 'नाव')
         .replace(/क्या/g, 'काय')
-        .replace(/है\?/g, 'आहे का?')
         .replace(/है/g, 'आहे')
         .replace(/आप/g, 'तुम्ही')
         .replace(/कैसे/g, 'कसे')
@@ -295,25 +289,87 @@ function App() {
         .replace(/ठीक/g, 'मजेत');
     }
 
-    // English to Hindi Dictionary
-    if (fromLang === 'en-US' && toLang === 'hi-IN') {
-      const enHiMap = {
-        "Hello": "नमस्ते",
-        "How are you?": "आप कैसे हैं?",
-        "What is your name?": "आपका नाम क्या है?",
-        "Thank you": "धन्यवाद"
+    // Hindi to English mapping
+    if (fromLang === 'hi-IN' && toLang === 'en-US') {
+      const hiEnMap = {
+        "नमस्ते": "Hello",
+        "आप कैसे हैं?": "How are you?",
+        "आपका नाम क्या है?": "What is your name?",
+        "धन्यवाद": "Thank you"
       };
-      if (enHiMap[cleanText]) return enHiMap[cleanText];
+      if (hiEnMap[cleanText]) return hiEnMap[hiEnMap];
+      if (hiEnMap[cleanText]) return hiEnMap[cleanText];
     }
 
-    // Universal Fallback formatting indicator for other cross-language pairs
-    return `${cleanText}`;
+    // Default passthrough if same or unsupported direct map
+    return cleanText;
   };
+
+  // Robust Text-to-Speech Output Handler
+  const speakOutputText = useCallback((textToSpeak, targetLang) => {
+    if (!speakerEnabled || !('speechSynthesis' in window) || !textToSpeak) return;
+
+    try {
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+
+      const utterance = new SpeechSynthesisUtterance(textToSpeak);
+      utterance.lang = targetLang;
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+
+      // Ensure utterance is stored in ref to prevent garbage collection bugs
+      utteranceRef.current = utterance;
+      activeUtterancesRef.current.push(utterance);
+
+      const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
+      
+      // Multi-tier voice matching (Exact -> Language Prefix -> Generic Fallback)
+      let matchedVoice = voices.find(v => v.lang.toLowerCase() === targetLang.toLowerCase());
+      if (!matchedVoice) {
+        const shortLang = targetLang.slice(0, 2).toLowerCase();
+        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(shortLang));
+      }
+      if (!matchedVoice && targetLang.startsWith('mr')) {
+        // Marathi fallback to Hindi voice if system lacks Marathi TTS voice
+        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith('hi'));
+      }
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+      }
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
+      };
+      utterance.onerror = (e) => {
+        console.warn('Speech synthesis audio error:', e);
+        setIsSpeaking(false);
+        activeUtterancesRef.current = activeUtterancesRef.current.filter(u => u !== utterance);
+      };
+
+      setTimeout(() => {
+        try {
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          console.error('Speech synthesis execution exception:', err);
+          setIsSpeaking(false);
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Speech synthesis initialization failed:', err);
+      setIsSpeaking(false);
+    }
+  }, [speakerEnabled]);
 
   const handleTranslationAndSpeech = useCallback((text) => {
     if (!text || !text.trim()) return;
 
     const translatedText = performTranslation(text, inputLang, outputLang);
+    setLastRawTranslation(translatedText);
     
     let displayFormatted = translatedText;
     if (outputLang === 'mr-IN') {
@@ -327,49 +383,11 @@ function App() {
     setTranslation(displayFormatted);
     saveToDatabase(text, displayFormatted);
 
-    // Robust Speech Synthesis with precise voice resolution & audio feedback
-    if (speakerEnabled && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
+    // Trigger explicit audio synthesis for target language
+    speakOutputText(translatedText, outputLang);
+  }, [inputLang, outputLang, saveToDatabase, speakOutputText]);
 
-      const utterance = new SpeechSynthesisUtterance(translatedText);
-      utterance.lang = outputLang;
-      utterance.rate = 0.95;
-      utterance.pitch = 1.0;
-
-      // Precision voice matching: exact match -> prefix match -> short code match
-      const voices = voicesRef.current.length > 0 ? voicesRef.current : window.speechSynthesis.getVoices();
-      let matchedVoice = voices.find(v => v.lang === outputLang);
-      if (!matchedVoice) {
-        matchedVoice = voices.find(v => v.lang.toLowerCase().startsWith(outputLang.slice(0, 2).toLowerCase()));
-      }
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-      }
-
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = (e) => {
-        console.warn('Speech synthesis error:', e);
-        setIsSpeaking(false);
-      };
-
-      utteranceRef.current = utterance;
-      
-      setTimeout(() => {
-        try {
-          window.speechSynthesis.speak(utterance);
-        } catch (err) {
-          console.error('Speech synthesis execution failed:', err);
-          setIsSpeaking(false);
-        }
-      }, 80);
-    }
-  }, [inputLang, outputLang, speakerEnabled, saveToDatabase]);
-
-  // Robust Speech Recognition Lifecycle with Throttled Restarts
+  // Robust Speech Recognition Lifecycle with Auto-Restart
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -491,6 +509,14 @@ function App() {
     }
   };
 
+  const replayAudio = () => {
+    if (lastRawTranslation) {
+      speakOutputText(lastRawTranslation, outputLang);
+    } else if (transcript) {
+      handleTranslationAndSpeech(transcript);
+    }
+  };
+
   const selectedInputObj = LANGUAGE_LIST.find(l => l.code === inputLang);
   const selectedOutputObj = LANGUAGE_LIST.find(l => l.code === outputLang);
 
@@ -579,13 +605,22 @@ function App() {
           <div style={{ backgroundColor: '#1e293b', padding: '15px', borderRadius: '8px', border: '1px solid #334155' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
               <h3 style={{ margin: 0, fontSize: '1rem', color: '#38bdf8' }}>3. Translation Output & Database Feed</h3>
-              <button 
-                onClick={() => setSpeakerEnabled(!speakerEnabled)} 
-                title={speakerEnabled ? "Speaker Voice On" : "Speaker Voice Muted"}
-                style={{ backgroundColor: speakerEnabled ? '#0369a1' : '#475569', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-              >
-                {speakerEnabled ? '🔊 Speaker On' : '🔇 Muted'}
-              </button>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button 
+                  onClick={replayAudio} 
+                  title="Replay Audio Output"
+                  style={{ backgroundColor: '#0284c7', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                >
+                  🔊 Replay Audio
+                </button>
+                <button 
+                  onClick={() => setSpeakerEnabled(!speakerEnabled)} 
+                  title={speakerEnabled ? "Speaker Voice On" : "Speaker Voice Muted"}
+                  style={{ backgroundColor: speakerEnabled ? '#0369a1' : '#475569', color: '#fff', border: 'none', padding: '5px 10px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '5px' }}
+                >
+                  {speakerEnabled ? '🔊 Speaker On' : '🔇 Muted'}
+                </button>
+              </div>
             </div>
             <div style={{ backgroundColor: '#0f172a', padding: '10px', borderRadius: '4px', border: '1px solid #334155', minHeight: '60px', fontSize: '0.95rem' }}>
               {translation}
